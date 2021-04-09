@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.layers import Input, Dense, GRU, LSTM, Bidirectional, Activation, Dropout, Concatenate, BatchNormalization
@@ -74,17 +75,30 @@ class ELModel():
         self._model = tf.keras.models.Model(inputs=[input_text_tokenized, input_text_attention_mask, input_text_sf_mask, input_item_embedded], outputs=mlp_outputs)
         self._model.get_layer('distilbert').trainable = False # make BERT layers untrainable
         self._model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=["accuracy"])
-        self._model.summary()
+        #self._model.summary()
         self._model.fit([text_tokenized, text_attention_masks, text_sf_masks, item_embedded], answer, epochs=epochs, batch_size=batch_size)
 
        
-    def test():
-        pass
+    def test(self, data, batch_size=32):
+        text_tokenized = data['text_tokenized']
+        text_attention_masks = data['text_attention_mask']
+        text_sf_masks = data['text_sf_mask']
+        item_embedded = data['item_embedded']
+        answer = data['answer']
+        #ner_tags = data['ner_tags']
+
+        results = self._model.evaluate([text_tokenized, text_attention_masks, text_sf_masks, item_embedded], answer, batch_size=batch_size)
+        print(f'Loss: {results[0]}')
+        print(f'Accuracy: {results[1]}')
 
 
     def save(self, filename):
-        filepath = f'data/{filename}.tf'
-        print('Saving into ' + filepath)
+        filepath = os.path.join(os.getcwd(), 'data', f'{filename}.tf')
+        print(f'Saving into {filepath}')
         self._model.save(filepath)
 
+    def load(self, filename):
+        filepath = os.path.join(os.getcwd(), 'data', f'{filename}.tf')
+        print(f'Load model from {filepath}')
+        self._model = tf.keras.models.load_model(filename)
 

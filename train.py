@@ -4,7 +4,7 @@ from el.model import ELModel
 
 
 def main():
-    data_raw = dataset.get_wikidata_disamb_train_dataset('small')
+    data_raw = dataset.get_wikidata_disamb_dataset('train', 'small')
     data_pre = preprocess.prepare_dataset(data_raw,
             sample_mode=True,
             use_cache=True)
