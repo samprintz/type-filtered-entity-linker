@@ -8,7 +8,7 @@ def get_aida_conll_train_dataset():
     return load_dataset('conll2003')['train']
 
 def get_wikidata_disamb_train_dataset(part):
-    if part:
+    if not part:
         print(f'Reading training data...')
         dataset_path = os.path.join(_path, '../dataset/wikidata-disambig-train.json')
     else:

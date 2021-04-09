@@ -1,17 +1,22 @@
 import json
 import os
 import numpy as np
+from tqdm import tqdm
 
 class PBG():
     _cache_dir = 'data/pbg/cache/'
     _url_prefix = 'http://www.wikidata.org/entity/'
     _names = None
     _vectors = None
+    _names_dict = {}
 
 
-    def __init__(self, sample_mode=False):
+    def __init__(self, sample_mode=False, use_cache=False):
+        self._use_cache = use_cache
+
         self.__read_names(sample_mode)
         self.__read_vectors(sample_mode)
+        self.__create_names_index()
 
         if not os.path.exists(self._cache_dir):
             os.makedirs(self._cache_dir)
@@ -38,17 +43,25 @@ class PBG():
         print('Read vectors (mmap)')
 
 
+    def __create_names_index(self):
+        print('Creating PyTorch Big Graph names index...')
+        i = 0
+        for name in tqdm(self._names):
+            self._names_dict[name] = i
+            i += 1
+        print('Created index')
+
+
     def __get_uri_of_item_id(self, item_id):
         return f'<{self._url_prefix}{item_id}>'
 
 
     def __get_index_by_item_id(self, item_id):
         item_uri = self.__get_uri_of_item_id(item_id)
-        i = 0
-        for key in self._names:
-            if key == item_uri:
-                return i
-            i += 1
+        try:
+            return self._names_dict[item_uri]
+        except KeyError:
+            return None
 
 
     def __get_vector_from_pbg(self, item_id):
@@ -79,12 +92,14 @@ class PBG():
 
 
     def get_item_embedding(self, item_id):
-        item_vector = self.__get_vector_from_cache(item_id)
-        if item_vector is not None:
-            return item_vector
+        if self._use_cache:
+            item_vector = self.__get_vector_from_cache(item_id)
+            if item_vector is not None:
+                return item_vector
         item_vector = self.__get_vector_from_pbg(item_id)
-        if item_vector is not None:
-            self.__save_vector_to_cache(item_id, item_vector)
-            print(f'Found embedding of {item_id}, wrote it to cache')
+        if self._use_cache:
+            if item_vector is not None:
+                self.__save_vector_to_cache(item_id, item_vector)
+                print(f'Found embedding of {item_id}, wrote it to cache')
         return item_vector
 
