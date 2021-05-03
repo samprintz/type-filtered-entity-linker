@@ -92,13 +92,11 @@ class ELModel():
         print(f'Accuracy: {results[1]}')
 
 
-    def save(self, filename):
-        filepath = os.path.join(os.getcwd(), 'data', f'{filename}.tf')
+    def save(self, filepath):
         print(f'Saving into {filepath}')
         self._model.save(filepath)
 
-    def load(self, filename):
-        filepath = os.path.join(os.getcwd(), 'data', f'{filename}.tf')
+    def load(self, filepath):
         print(f'Load model from {filepath}')
-        self._model = tf.keras.models.load_model(filename)
+        self._model = tf.keras.models.load_model(filepath)
 

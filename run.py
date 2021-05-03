@@ -1,3 +1,4 @@
+import os
 import sys
 from inout import dataset
 import preprocess
@@ -6,23 +7,18 @@ from el.entity_linker import EntityLinker
 
 
 def main():
-    text = sys.argv[1]
+    try:
+        text = sys.argv[1]
+    except:
+        text = "Napoleon was the first emperor of the French empire."
 
     # Load model
-    #model = ELModel()
-    #model.load('model')
-
-    # TODO Workaround: re-train model, as loading of the saved model doesn't work
-    #train_data_raw = dataset.get_wikidata_disamb_dataset('train', 'small')
-    #train_data_pre = preprocess.prepare_dataset(train_data_raw,
-    #        sample_mode=True,
-    #        use_cache=True)
-    #train_data = preprocess.reshape_dataset(train_data_pre)
-
+    model_type = 'rnn'
+    model_name = 'model-20210428-1'
+    model_checkpoint = 60
+    filepath = os.path.join(os.getcwd(), 'data', 'models', model_type, model_name, f'cp-{model_checkpoint:04d}.ckpt')
     model = ELModel()
-    #model.train(train_data,
-    #    epochs=2,
-    #    batch_size=32)
+    model.load(filepath)
 
     # Initialize linker and do the entity linking
     linker = EntityLinker(model)
