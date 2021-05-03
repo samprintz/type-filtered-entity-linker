@@ -75,6 +75,7 @@ class PBG():
         cache_file = f'{self._cache_dir}{item_id}.txt'
         if not os.path.exists(cache_file):
             return None
+        # TODO Change to np.loadtxt()
         with open(cache_file) as cache:
             line = cache.readline().strip()
         if not line:
@@ -86,6 +87,7 @@ class PBG():
 
 
     def __save_vector_to_cache(self, item_id, item_vector):
+        # TODO Change to np.savetxt()
         with open(f'{self._cache_dir}{item_id}.txt', "w+") as cache:
             item_vector = str(item_vector).replace('\n', ' ').replace('[', '').replace(']', '')
             cache.write(item_vector)
