@@ -1,3 +1,4 @@
+import logging
 import os
 import tensorflow as tf
 import numpy as np
@@ -5,7 +6,7 @@ from tensorflow.keras.layers import Input, Dense, GRU, LSTM, Bidirectional, Acti
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification, DistilBertConfig, TFDistilBertModel
 
 
-class ELModel():
+class ELModel:
     _max_text_length = 512
     _item_vocab_size = 200
 
@@ -22,6 +23,8 @@ class ELModel():
 
 
     def __init__(self):
+        self._logger = logging.getLogger(__name__)
+
         tf.compat.v1.disable_eager_execution()
         for gpu in tf.config.experimental.list_physical_devices('GPU'):
             tf.config.experimental.set_memory_growth(gpu, True)
@@ -88,15 +91,15 @@ class ELModel():
         #ner_tags = data['ner_tags']
 
         results = self._model.evaluate([text_tokenized, text_attention_masks, text_sf_masks, item_embedded], answer, batch_size=batch_size)
-        print(f'Loss: {results[0]}')
-        print(f'Accuracy: {results[1]}')
+        self._logger.info(f'Loss: {results[0]}')
+        self._logger.info(f'Accuracy: {results[1]}')
 
 
     def save(self, filepath):
-        print(f'Saving into {filepath}')
+        self._logger.info(f'Saving into {filepath}')
         self._model.save(filepath)
 
     def load(self, filepath):
-        print(f'Load model from {filepath}')
+        self._logger.info(f'Load model from {filepath}')
         self._model = tf.keras.models.load_model(filepath)
 

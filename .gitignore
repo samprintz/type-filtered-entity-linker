@@ -1,6 +1,5 @@
 data/
-dataset/
+log/
 __pycache__/
-train/
-*log.txt
+*.log
 *.swp
