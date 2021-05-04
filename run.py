@@ -30,22 +30,14 @@ def main():
     model_checkpoint = 60
 
     # Logging settings
-    #import pudb
-    #pu.db
     log_level = logging.DEBUG
     log_filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     log_path = os.path.join(dirs['logging'], f'{log_filename}.log')
     log_format = "%(asctime)s: %(levelname)-1.1s %(name)s:%(lineno)d] %(message)s"
 
     logger = logging.getLogger()
-    logging.basicConfig(
-        level=log_level,
-        format=log_format,
-        handlers=[
-            logging.FileHandler(log_path),
-            logging.StreamHandler()
-        ]
-    )
+    logging.basicConfig(level=log_level, format=log_format,
+            handlers=[logging.FileHandler(log_path), logging.StreamHandler()])
 
     # Load model
     # TODO load model entity disambiguator (where it is actually needed)

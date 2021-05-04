@@ -2,6 +2,7 @@ import logging
 
 from el.mention_detector import SpacyMentionDetector
 from el.candidate_generator import WikidataSparqlCandidateGenerator
+from el.entity_disambiguator import EntityDisambiguator
 
 class EntityLinker:
 
@@ -9,9 +10,8 @@ class EntityLinker:
         self._model = model
         self._logger = logging.getLogger(__name__)
 
+
     def process(self, text):
-        #import pudb
-        #pu.db
         mentions = self.detect_mentions(text)
         candidates = self.generate_candidates(text, mentions)
         entities = self.disambiguate_entities(text, candidates)
@@ -33,15 +33,15 @@ class EntityLinker:
         self._logger.debug(f'Candidates: {candidates}')
         return candidates
 
-
     def disambiguate_entities(self, text, candidates):
         self.__print_step_heading('Entity Disambiguation')
-        # TODO
-        entities = candidates
-        self._logger.debug("TODO")
-        #self._logger.debug(f'Entities: {entities}')
+        entity_disambiguator = EntityDisambiguator()
+        entities = entity_disambiguator.process(text, candidates)
+        self._logger.debug(f'Entities: {entities}')
         return entities
 
+
     def __print_step_heading(self, step_heading):
+        self._logger.info('')
         self._logger.info(f'=== {step_heading} ===')
 

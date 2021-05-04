@@ -19,7 +19,7 @@ class Wikidata:
 
 
     def get_items_by_label(self, label):
-        self._logger.debug(f'Get items with label {label} from Wikidata SPARQL endpoint')
+        self._logger.debug(f'Get items with label "{label}" from Wikidata SPARQL endpoint')
         data = requests.get(self._url_sparql, params={
                 'query': self._query_get_by_label % label,
                 'format': 'json'}).json()
@@ -29,8 +29,9 @@ class Wikidata:
             # TODO try except this:
             item = self.__translate_from_url(row['s']['value'])
 
+            # TODO filter by pattern already here?: Q\d+
             items.append(item)
-            self._logger.debug(f'Found {item} with label {label}')
+        self._logger.debug(f'Found {len(items)} items for the label "{label}"')
         return items
 
 
