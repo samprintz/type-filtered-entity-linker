@@ -84,15 +84,26 @@ class PBG:
 
         item_index = self.__get_index_by_item_id(item_id)
         if item_index is None:
-            raise Exception(f'Could not find embedding for "{item_id}"')
+            # There is definetly no embedding available
+            # Store zero vector
+            item_vector = np.zeros(200)
+            self.__store_vector_in_memory(item_id, item_vector)
+            self.__save_vector_to_cache(item_id, item_vector)
+            # Exception leads to skipping in the preprocessor/entity disambiguator
+            raise ValueError(f'"{item_id}" has no embedding')
         return self._vectors[item_index]
 
 
     def __get_vector_from_cache(self, item_id):
         cache_file = f'{self._cache_dir}{item_id}.txt'
         if not os.path.exists(cache_file):
+            self._logger.debug(f'Embedding of "{item_id}" not in cache')
             return None
         item_vector = np.loadtxt(cache_file)
+        if not item_vector.any(): # zero vector
+            self._logger.debug(f'Read zero vector (200,) from cache for "{item_id}"')
+            # Exception leads to skipping in the preprocessor/entity disambiguator
+            raise ValueError(f'"{item_id}" has no embedding')
         self._logger.debug(f'Read embedding of "{item_id}" from cache')
         return item_vector
 
@@ -110,9 +121,14 @@ class PBG:
         try:
             item_vector = self[item_id]
             self._logger.debug(f'Read embedding of "{item_id}" from memory')
-            return item_vector
         except KeyError:
+            self._logger.debug(f'Embedding of "{item_id}" not in memory')
             return None
+        if not item_vector.any(): # zero vector
+            self._logger.debug(f'Read zero vector (200,) from memory for "{item_id}"')
+            # Exception leads to skipping in the preprocessor/entity disambiguator
+            raise ValueError(f'"{item_id}" has no embedding')
+        return item_vector
 
 
     def __store_vector_in_memory(self, item_id, item_vector):
