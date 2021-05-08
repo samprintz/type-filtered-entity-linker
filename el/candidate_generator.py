@@ -8,9 +8,9 @@ class WikidataSparqlCandidateGenerator:
         self._logger = logging.getLogger(__name__)
         self._wikidata = Wikidata()
 
-    def process(self, text, mentions):
-        candidates = []
-        for mention in mentions:
-            # TODO create some doc object (reuse from spacy?) and append candidates to that
-            candidates.append(self._wikidata.get_items_by_label(mention))
-        return candidates
+    def process(self, doc):
+        for mention in doc['mentions']:
+            candidates = self._wikidata.get_items_by_label(mention['sf'])
+            mention['candidates'] = candidates
+            self._logger.info(f'Generated {len(mention["candidates"])} candidates for mention "{mention["sf"]}"')
+        return doc

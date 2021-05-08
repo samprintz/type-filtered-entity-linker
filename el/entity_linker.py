@@ -6,39 +6,37 @@ from el.entity_disambiguator import EntityDisambiguator
 
 class EntityLinker:
 
-    def __init__(self, model):
-        self._model = model
+    def __init__(self, config):
         self._logger = logging.getLogger(__name__)
+        self._config = config
 
 
-    def process(self, text):
-        mentions = self.detect_mentions(text)
-        candidates = self.generate_candidates(text, mentions)
-        entities = self.disambiguate_entities(text, candidates)
-        return mentions, candidates, entities
+    def process(self, doc):
+        doc_with_mentions = self.detect_mentions(doc)
+        doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        doc_with_entities = self.disambiguate_entities(doc_with_candidates)
+        return doc_with_mentions, doc_with_candidates, doc_with_entities
 
 
-    def detect_mentions(self, text):
+    def detect_mentions(self, doc):
         self.__print_step_heading('Mention Detection')
         mention_detector = SpacyMentionDetector()
-        mentions = mention_detector.process(text)
-        self._logger.debug(f'Mentions: {mentions}')
-        return mentions
+        mention_detector.process(doc)
+        return doc
 
 
-    def generate_candidates(self, text, mentions):
+    def generate_candidates(self, doc):
         self.__print_step_heading('Candidate Generation')
         candidate_generator = WikidataSparqlCandidateGenerator()
-        candidates = candidate_generator.process(text, mentions)
-        self._logger.debug(f'Candidates: {candidates}')
-        return candidates
+        candidate_generator.process(doc)
+        return doc
 
-    def disambiguate_entities(self, text, candidates):
+
+    def disambiguate_entities(self, doc):
         self.__print_step_heading('Entity Disambiguation')
-        entity_disambiguator = EntityDisambiguator()
-        entities = entity_disambiguator.process(text, candidates)
-        self._logger.debug(f'Entities: {entities}')
-        return entities
+        entity_disambiguator = EntityDisambiguator(self._config['model_path'])
+        entity_disambiguator.process(doc)
+        return doc
 
 
     def __print_step_heading(self, step_heading):
