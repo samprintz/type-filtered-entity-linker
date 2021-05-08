@@ -20,7 +20,7 @@ class EntityDisambiguator:
             for candidate in mention['candidates']:
 
                 # Preprocessing
-                sample_raw = [doc['text'], mention['sf'], candidate]
+                sample_raw = [doc['text'], mention['sf'], candidate['item_id']]
                 try:
                     sample_pre = self._preprocessor.prepare_sample(sample_raw)
                 except ValueError as e: # skip candidate when there is no embedding found
@@ -33,16 +33,26 @@ class EntityDisambiguator:
 
                 # matching score prediction
                 matching_score = self._model.predict(sample)
-                self._logger.info(f'Score: "{sample_pre["item_name"]}" vs. "{sample_pre["item_id"]}": {matching_score}')
-                candidates.append((candidate, matching_score))
+                self._logger.info(f'Score: "{mention["sf"]}" vs. {candidate["item_id"]}: {matching_score}')
+                candidate['score'] = matching_score
+                candidates.append(candidate)
 
             # Winning entity to which the mention likely refers; mention is disambiguated now
             entity = self.__get_best_candidate(candidates)
+            self._logger.info(f'Best candidate for "{mention["sf"]}": {entity["item_id"]} ({entity["score"]})')
             mention['entity'] = entity
 
         return doc
 
 
     def __get_best_candidate(self, candidates):
-        # TODO
-        pass
+        """
+        Iterate the list of candidate entities and return the one with the highest score
+        """
+        self._logger.debug(f'Find best candidate:')
+        best_candidate = None
+        for candidate in candidates:
+            if best_candidate is None or candidate['score'] > best_candidate['score']:
+                self._logger.debug(f'Update best candidate: {candidate["item_id"]} ({candidate["score"]})')
+                best_candidate = candidate
+        return best_candidate

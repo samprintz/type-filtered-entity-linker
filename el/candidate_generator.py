@@ -10,7 +10,10 @@ class WikidataSparqlCandidateGenerator:
 
     def process(self, doc):
         for mention in doc['mentions']:
-            candidates = self._wikidata.get_items_by_label(mention['sf'])
-            mention['candidates'] = candidates
+            mention['candidates'] = []
+            candidate_item_ids = self._wikidata.get_items_by_label(mention['sf'])
+            for candidate_item_id in candidate_item_ids:
+                candidate = {'item_id': candidate_item_id}
+                mention['candidates'].append(candidate)
             self._logger.info(f'Generated {len(mention["candidates"])} candidates for mention "{mention["sf"]}"')
         return doc
