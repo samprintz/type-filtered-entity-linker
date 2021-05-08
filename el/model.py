@@ -120,11 +120,25 @@ class ELModel:
         item_pbg = data['item_pbg']
         item_embedded = data['item_embedded']
 
+        # TODO Dependending on the model, results is either a 2-dim. array (load(Cetoli)) or one value (__init__()).
+        # How to handle this? Change completely to my models and don't use Cetoli's anymore? Have two ELModel() classes, one for the loaded models, one for mine?
         results = self._model.predict([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
                 batch_size=batch_size)
 
         self._logger.debug(f'Prediction: {results}')
-        return results
+        score = self.__standardize_result(results[0])
+        self._logger.debug(f'Score: {score}')
+
+        return score
+
+    def __standardize_result(self, result):
+        """
+        In Cetoli's models, the first index represents irrelevance (max. [0., 1.]), the second index relevance (max. [1., 0.]).
+        If the relevance is higher than the irrelevance, return the relevance score (= matching score). Otherwise 0 (not matching).
+        """
+        if result[0] < result[1]:
+            return result[1] # matching score
+        return 0. # not matching
 
 
     def save(self, filepath):
@@ -132,6 +146,9 @@ class ELModel:
         self._model.save(filepath)
 
     def load(self, filepath):
+        """
+        Load a model from a file. This overwrites the model built in __init__() stored at self._model.
+        """
         self._logger.info(f'Load model from {filepath}')
         self._model = tf.keras.models.load_model(filepath)
 
