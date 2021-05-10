@@ -120,10 +120,16 @@ class ELModel:
         item_pbg = data['item_pbg']
         item_embedded = data['item_embedded']
 
-        # TODO Dependending on the model, results is either a 2-dim. array (load(Cetoli)) or one value (__init__()).
-        # How to handle this? Change completely to my models and don't use Cetoli's anymore? Have two ELModel() classes, one for the loaded models, one for mine?
-        results = self._model.predict([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
-                batch_size=batch_size)
+        # Explanation cf. comment in load()
+        global sess
+        global graph
+        with graph.as_default():
+            tf.compat.v1.keras.backend.set_session(sess)
+
+            # TODO Dependending on the model, results is either a 2-dim. array (load(Cetoli)) or one value (__init__()).
+            # How to handle this? Change completely to my models and don't use Cetoli's anymore? Have two ELModel() classes, one for the loaded models, one for mine?
+            results = self._model.predict([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
+                    batch_size=batch_size)
 
         self._logger.debug(f'Prediction: {results}')
         score = self.__standardize_result(results[0])
@@ -150,5 +156,15 @@ class ELModel:
         Load a model from a file. This overwrites the model built in __init__() stored at self._model.
         """
         self._logger.info(f'Load model from {filepath}')
+
+        # Flask creates a thread for each request. As the model is generated during the first request,
+        # it is not visible in the next request. Therefore, create a global session that is used throughout
+        # all following requests.
+        global sess
+        global graph
+        sess = tf.compat.v1.Session()
+        graph = tf.compat.v1.get_default_graph()
+        tf.compat.v1.keras.backend.set_session(sess)
+
         self._model = tf.keras.models.load_model(filepath)
 
