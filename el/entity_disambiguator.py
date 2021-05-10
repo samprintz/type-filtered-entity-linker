@@ -40,6 +40,7 @@ class EntityDisambiguator:
             # Winning entity to which the mention likely refers; mention is disambiguated now
             entity = self.__get_best_candidate(candidates)
             self._logger.info(f'Best candidate for "{mention["sf"]}": {entity["item_id"]} ({entity["score"]})')
+            entity['item_url'] = self.__make_wikidata_url(entity['item_id'])
             mention['entity'] = entity
 
         return doc
@@ -56,3 +57,14 @@ class EntityDisambiguator:
                 self._logger.debug(f'Update best candidate: {candidate["item_id"]} ({candidate["score"]})')
                 best_candidate = candidate
         return best_candidate
+
+
+    def __make_wikidata_url(self, item_id):
+        # TODO move to utils.py
+        wikidata_url_prefix = 'https://www.wikidata.org/wiki'
+        return f'{wikidata_url_prefix}/{item_id}'
+
+
+    def __make_dbpedia_url(self, entity):
+        # TODO move to utils.py
+        raise NotImplementedError
