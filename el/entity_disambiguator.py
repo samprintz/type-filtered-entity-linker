@@ -15,6 +15,12 @@ class EntityDisambiguator:
         # For each mention in the text
         for mention in doc['mentions']:
 
+            # Skip if the mention has no candidates
+            if len(mention['candidates']) is 0:
+                self._logger.info(f'No candidates for "{mention["sf"]}", skipping')
+                mention['entity'] = None
+                continue
+
             # Predict how good of each its candidates matches with it (rank) by using the neural model
             candidates = []
             for candidate in mention['candidates']:
@@ -26,8 +32,6 @@ class EntityDisambiguator:
                 except ValueError as e: # skip candidate when there is no embedding found
                     self._logger.info(str(e))
                     continue
-
-                #import pudb; pu.db
 
                 sample = self._preprocessor.reshape_dataset([sample_pre], for_training=False)
 

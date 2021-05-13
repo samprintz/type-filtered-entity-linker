@@ -129,7 +129,7 @@ class ELModel:
             # TODO Dependending on the model, results is either a 2-dim. array (load(Cetoli)) or one value (__init__()).
             # How to handle this? Change completely to my models and don't use Cetoli's anymore? Have two ELModel() classes, one for the loaded models, one for mine?
             results = self._model.predict([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
-                    batch_size=batch_size)
+                    batch_size=batch_size, verbose=0)
 
         self._logger.debug(f'Prediction: {results}')
         score = self.__standardize_result(results[0])

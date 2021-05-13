@@ -51,7 +51,7 @@ def main():
 
     # Initialize linker and do the entity linking
     linker = EntityLinker(config)
-    mentions, candidates, entities = linker.process(doc)
+    doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
     logger.info("Done")
 
 

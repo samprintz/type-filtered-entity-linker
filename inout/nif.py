@@ -4,20 +4,32 @@ def generate_nif(doc):
     collection = NIFCollection()
 
     context = collection.add_context(
-            uri="http://test.org/doc1", # TODO
+            uri=doc['uri'],
             mention=doc['text'])
 
     for mention in doc['mentions']:
-        context.add_phrase(
-                beginIndex=mention['start'],
-                endIndex=mention['end'],
-                taClassRef=[], # TODO
-                score=mention['entity']['score'], # TODO format?
-                annotator='http://test.org/', # TODO
-                taIdentRef=mention['entity']['item_url'],
-                taMsClassRef='') # TODO
+        if mention['entity'] is not None:
+            context.add_phrase(
+                    beginIndex=mention['start'],
+                    endIndex=mention['end'],
+                    taClassRef=[], # TODO
+                    score=mention['entity']['score'], # TODO format?
+                    annotator='http://test.org/', # TODO
+                    taIdentRef=mention['entity']['item_url'],
+                    taMsClassRef='') # TODO
+        else: # if a mention was detected, but no entity was found
+            context.add_phrase(
+                    beginIndex=mention['start'],
+                    endIndex=mention['end'],
+                    annotator='http://test.org/') # TODO
 
     generated_nif = collection.dumps(format='turtle')
-    print(generated_nif)
     return generated_nif
 
+def read_nif(nif_data):
+    # TODO try catch?
+    doc = {}
+    parsed = NIFCollection.loads(nif_data, format='turtle')
+    doc['uri'] = parsed.contexts[0].uri.toPython()
+    doc['text'] = parsed.contexts[0].mention
+    return doc

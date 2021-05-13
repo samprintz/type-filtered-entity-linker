@@ -20,11 +20,22 @@ class Wikidata:
 
     def get_items_by_label(self, label):
         self._logger.debug(f'Get items with label "{label}" from Wikidata SPARQL endpoint')
-        data = requests.get(self._url_sparql, params={
-                'query': self._query_get_by_label % label,
-                'format': 'json'}).json()
 
         items = []
+
+        response = requests.get(self._url_sparql, params={'query': self._query_get_by_label % label, 'format': 'json'})
+
+        if not response.status_code == 200:
+            self._logger.debug(f'Request for "{label}" failed (status code {response.status_code} ({response.reason}))')
+            return items
+
+        try:
+            data = response.json()
+        except Exception as e:
+            self._logger.debug(f'Failed to read following JSON response:')
+            self._logger.debug(f'{response.text}')
+            return items
+
         for row in data['results']['bindings']:
             # TODO try except this:
             item = self.__translate_from_url(row['s']['value'])

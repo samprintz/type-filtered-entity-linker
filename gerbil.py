@@ -50,16 +50,24 @@ linker = EntityLinker(config)
 
 @app.route('/', methods=['get', 'post'])
 def index():
-    text = "Napoleon was the first emperor of the French empire."
-    doc = {'text' : text}
+    logger.info("=== New request === ")
+
+    nif_data = request.data
+    doc = nif.read_nif(nif_data)
+
+    logger.info(doc['uri'])
+    logger.info(doc['text'])
+
     doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
-    logger.info("Done (entity linking)")
 
     result = nif.generate_nif(doc)
-    logger.info("Done (generate NIF)")
 
-    print(result)
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        print(result)
+
+    logger.info("Response sent")
     return Response(result, content_type='application/x-turtle')
+
     #print(request.data)
     #return "Hello World"
 
@@ -69,10 +77,12 @@ class LoggingMiddleware(object):
 
     def __call__(self, env, resp):
         errorlog = env['wsgi.errors']
-        pprint.pprint(('REQUEST', env), stream=errorlog)
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            pprint.pprint(('REQUEST', env), stream=errorlog)
 
         def log_response(status, headers, *args):
-            pprint.pprint(('RESPONSE', status, headers), stream=errorlog)
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                pprint.pprint(('RESPONSE', status, headers), stream=errorlog)
             return resp(status, headers, *args)
 
         return self._app(env, log_response)
