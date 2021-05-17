@@ -37,10 +37,9 @@ class Wikidata:
             return items
 
         for row in data['results']['bindings']:
-            # TODO try except this:
             item = self.__translate_from_url(row['s']['value'])
-
-            # TODO filter by pattern already here?: Q\d+
+            if not item.startswith("Q"):
+                continue
             items.append(item)
         self._logger.debug(f'Found {len(items)} items for the label "{label}"')
         return items
