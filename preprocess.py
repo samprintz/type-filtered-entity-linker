@@ -8,7 +8,7 @@ from inout.pbg import PBG
 
 class Preprocessor:
     _bert_version = 'distilbert-base-uncased'
-    _max_sentence_length = 512
+    _max_text_length = 512
     _embedding_size = 768
 
 
@@ -25,7 +25,7 @@ class Preprocessor:
             self._bert_version,
             do_lower_case=True,
             add_special_tokens=True,
-            max_length=self._max_sentence_length,
+            max_length=self._max_text_length,
             pad_to_max_length=True)
 
 
@@ -48,11 +48,11 @@ class Preprocessor:
         sample['text_attention_mask'] = None # set by add_tokens()
         sample['item_name'] = mention
         self.add_tokens(sample)
-        sample['text_sf_mask'] = None # set by add_sf_mask()
-        self.add_sf_mask(sample)
+        sample['text_mention_mask'] = None # set by add_mention_mask()
+        self.add_mention_mask(sample)
         sample['item_id'] = candidate
         sample['item_pbg'] = self._pbg.get_item_embedding(candidate)
-        sample['item_embedded'] = np.empty((1, 900)) # TODO
+        sample['item_glove'] = np.empty((1, 900)) # TODO
         return sample
 
 
@@ -81,13 +81,13 @@ class Preprocessor:
                 sample['text_attention_mask'] = None # set by add_tokens()
                 sample['item_name'] = line['string']
                 self.add_tokens(sample)
-                sample['text_sf_mask'] = None # set by add_sf_mask()
-                self.add_sf_mask(sample)
+                sample['text_mention_mask'] = None # set by add_mention_mask()
+                self.add_mention_mask(sample)
 
                 # Once for correct Wikidata item
                 sample['item_id'] = line['correct_id']
                 sample['item_pbg'] = self._pbg.get_item_embedding(line['correct_id'])
-                sample['item_embedded'] = np.empty((1, 900)) # TODO
+                sample['item_glove'] = np.empty((1, 900)) # TODO
                 sample['answer'] = True
                 data.append(sample)
                 sample_count += 1
@@ -95,7 +95,7 @@ class Preprocessor:
                 # Once for wrong Wikidata item
                 sample['item_id'] = line['wrong_id']
                 sample['item_pbg'] = self._pbg.get_item_embedding(line['wrong_id'])
-                sample['item_embedded'] = np.empty((1, 900)) # TODO
+                sample['item_glove'] = np.empty((1, 900)) # TODO
                 sample['answer'] = False
                 data.append(sample)
                 sample_count += 1
@@ -117,8 +117,8 @@ class Preprocessor:
         # Text
         inputs = self._tokenizer.encode_plus(sample['text'],
                 add_special_tokens=True,
-                max_length=self._max_sentence_length,
-                padding='max_length',
+                max_length=self._max_text_length,
+                padding='max_length', # TODO padding here or in model (together with item_glove)?
                 return_attention_mask=True)
         sample['text_tokenized'] = inputs['input_ids']
         sample['text_attention_mask'] = inputs['attention_mask']
@@ -128,22 +128,23 @@ class Preprocessor:
         sample['item_name_tokenized'] = inputs
 
 
-    def add_sf_mask(self, sample):
+    def add_mention_mask(self, sample):
         """
         Add a mask to the sample for masking the output of BERT to the position of the mention.
         """
-        sf_mask = []
+        mention_mask = []
         for token in sample['text_tokenized']:
-            sf_mask.append([1. if token in sample['item_name_tokenized'] else 0.] * self._embedding_size)
+            mention_mask.append([1. if token in sample['item_name_tokenized'] else 0.] * self._embedding_size)
         # Padding
-        while len(sf_mask) < self._max_sentence_length:
-            sf_mask.append(np.zeros(self._embedding_size))
-        sample['text_sf_mask'] = sf_mask
+        while len(mention_mask) < self._max_text_length:
+            mention_mask.append(np.zeros(self._embedding_size))
+        sample['text_mention_mask'] = mention_mask
 
 
     def reshape_dataset(self, data_pre, for_training=True):
         """
-        Reshapes a preprocessed dataset (list of samples) to a suitable input for model.train() or model.predict().
+        Reshapes a preprocessed dataset (list of samples) to a suitable input (dict of features) for model.train() or
+        model.predict().
         """
 
         if not isinstance(data_pre, list):
@@ -152,7 +153,7 @@ class Preprocessor:
         self._logger.debug(f'Reshaping dataset ({len(data_pre)} samples)...')
         data = {}
 
-        keys = ['text_tokenized', 'text_attention_mask', 'text_sf_mask', 'item_pbg', 'item_embedded']
+        keys = ['text_tokenized', 'text_attention_mask', 'text_mention_mask', 'item_pbg', 'item_glove']
         if for_training:
             keys.append('answer')
 
