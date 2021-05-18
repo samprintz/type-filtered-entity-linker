@@ -32,7 +32,7 @@ class EntityLinker:
     def generate_candidates(self, doc):
         self.__print_step_heading('Candidate Generation')
         if self._candidate_generator is None:
-            self._candidate_generator = WikidataSparqlCandidateGenerator()
+            self._candidate_generator = WikidataSparqlCandidateGenerator(self._config['use_filter'])
         self._candidate_generator.process(doc)
         return doc
 

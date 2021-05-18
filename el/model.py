@@ -39,11 +39,11 @@ class ELModel:
 
         input_text_tokenized = Input(shape=(self._max_text_length,), dtype='int32', name='text_tokenized')
         input_text_attention_mask = Input(shape=(self._max_text_length,), dtype='int32', name='text_attention_mask')
-        input_text_sf_mask = Input(shape=(self._max_text_length, self._bert_embedding_size), dtype='float32', name='text_sf_mask')
+        input_text_mention_mask = Input(shape=(self._max_text_length, self._bert_embedding_size), dtype='float32', name='text_mention_mask')
 
         embedding_layer = transformer_model.distilbert(input_text_tokenized, attention_mask=input_text_attention_mask)[0]
         #cls_token = embedding_layer[:,0,:]
-        sf_token = tf.math.reduce_mean(tf.math.multiply(embedding_layer, input_text_sf_mask), axis=1)
+        sf_token = tf.math.reduce_mean(tf.math.multiply(embedding_layer, input_text_mention_mask), axis=1)
         question_outputs = BatchNormalization()(sf_token)
         question_outputs = Dense(self._text_vector_size)(question_outputs)
         question_outputs = Activation('relu')(question_outputs)
@@ -53,17 +53,19 @@ class ELModel:
         item_pbg_outputs = Dense(self._item_vector_size)(input_item_pbg)
         item_pbg_outputs = Activation('relu')(item_pbg_outputs)
 
-        # Part II-B: Entity -> GCN/GAT
+        # Part II-B: Entity -> GCN
         # TODO copy from other model
 
-        # Part II-C: Entity graph node (as text) -> Bi-LSTM
+        # Part II-C: Entity -> GAT
+        # TODO copy from other model
+
+        # Part II-D: Entity graph node (as text) -> Bi-LSTM
         fw_lstm = LSTM(self._memory_dim)
         bw_lstm = LSTM(self._memory_dim, go_backwards=True)
 
-        # TODO rename to input_item_glove?
-        input_item_embedded = Input(shape=(None, self._item_glove_vocab_size), name='item_embedded')
-        item_embedded_outputs = Dense(self._item_vector_size)(input_item_embedded)
-        item_embedded_outputs = Activation('relu')(item_embedded_outputs)
+        input_item_glove = Input(shape=(None, self._item_glove_vocab_size), name='item_glove')
+        item_glove_outputs = Dense(self._item_vector_size)(input_item_glove)
+        item_glove_outputs = Activation('relu')(item_glove_outputs)
 
         # Part III: Comparator -> MLP
         concatenated = Concatenate(axis=1)([question_outputs, item_pbg_outputs])
@@ -76,37 +78,152 @@ class ELModel:
         # Compile model
         optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
 
-        self._model = tf.keras.models.Model(inputs=[input_text_tokenized, input_text_attention_mask, input_text_sf_mask, input_item_pbg, input_item_embedded], outputs=mlp_outputs)
+        self._model = tf.keras.models.Model(inputs=[input_text_tokenized, input_text_attention_mask, input_text_mention_mask, input_item_pbg, input_item_glove], outputs=mlp_outputs)
         self._model.get_layer('distilbert').trainable = False # make BERT layers untrainable
         self._model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=["accuracy"])
         #self._model.summary()
 
 
-    def train(self, data, epochs=20, batch_size=32):
-        # TODO use generator
+    """
+    def __generate_data(self, dataset, batch_size):
+
         text_tokenized = data['text_tokenized']
         text_attention_masks = data['text_attention_mask']
-        text_sf_masks = data['text_sf_mask']
+        text_mention_masks = data['text_mention_mask']
         item_pbg = data['item_pbg']
-        # TODO rename to item_glove?
-        item_embedded = data['item_embedded']
+        item_glove = data['item_glove']
         answer = data['answer']
         #ner_tags = data['ner_tags']
 
-        self._model.fit([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
+        self._model.fit([text_tokenized, text_attention_masks, text_mention_masks, item_pbg, item_glove],
+                answer, epochs=epochs, batch_size=batch_size)
+
+
+
+
+
+        dataset.pop('item_vector')
+        dataset.pop('question_vectors')
+
+        # https://stackoverflow.com/questions/46493419/use-a-generator-for-keras-model-fit-generator
+        i = 0
+        while True:
+            # get a batch from the shuffled dataset, preprocess it, and give it to the model
+            batch = {
+                    'text': [],
+                    'text_tokenized': [],
+                    'text_attention_mask': [],
+                    'item_name': [],
+                    'text_mention_mask': [],
+                    'item_id': [],
+                    'item_pbg': [],
+                    'item_glove': [],
+                    'answer': []
+                }
+
+            # draw a (ordered) batch from the (shuffled) dataset
+            for b in range(batch_size):
+
+                # TODO declare before dataset_length in advance
+                if i == len(dataset['text_tokenized']): # re-shuffle when processed whole dataset
+                    i = 0
+
+                    # TODO outsource shuffeling in function
+                    lists = list(zip(
+                            dataset['text'],
+                            dataset['text_tokenized'],
+                            dataset['text_attention_mask'],
+                            dataset['item_name'],
+                            dataset['text_mention_mask'],
+                            dataset['item_id'],
+                            dataset['item_pbg'],
+                            dataset['item_glove'],
+                            dataset['answer']
+                        ))
+
+                    random.shuffle(lists)
+
+                    dataset['text'], \
+                    dataset['text_tokenized'], \
+                    dataset['text_attention_mask'], \
+                    dataset['item_name'], \
+                    dataset['text_mention_mask'], \
+                    dataset['item_id'], \
+                    dataset['item_pbg'], \
+                    dataset['item_glove'], \
+                    dataset['answer'] \
+                    = zip(*lists)
+
+                    #TODO rather stop iteration?
+                    # raise StopIteration
+
+                # add sample
+                batch['text'].append(dataset['text'][i])
+                batch['text_tokenized'].append(dataset['text_tokenized'][i])
+                batch['text_attention_mask'].append(dataset['text_attention_mask'][i])
+                batch['item_name'].append(dataset['item_name'][i])
+                batch['text_mention_mask'].append(dataset['text_mention_mask'][i])
+                batch['item_id'].append(dataset['item_id'][i])
+                batch['item_glove'].append(dataset['item_glove'][i])
+                batch['item_pbg'].append(dataset['item_pbg'][i])
+                batch['answer'].append(dataset['answer'][i])
+                i += 1
+
+            # preprocess batch (array, pad, tokenize)
+            X = preprocessor.reshape_dataset
+            X['item_glove'] = tf.keras.preprocessing.sequence.pad_sequences(
+                    batch['item_glove'], value=self._mask_value, padding='post', dtype='float64')
+
+            X['text_mention_mask'] = tf.keras.preprocessing.sequence.pad_sequences(
+                    batch['text_mention_mask'], maxlen=self._max_text_length, value=0.0)
+            X['question'], X['text_attention_mask'] = self.__tokenize(
+                    batch['text_tokenized'], self._tokenizer, self._max_text_length)
+            X['item_pbg'] = np.asarray(batch['item_pbg'])
+            y = np.asarray(batch['answer'])
+
+            yield X, y
+
+
+    def train(self, dataset, save_path, epochs=20, batch_size=32):
+        save_model_callback = tf.keras.callbacks.ModelCheckpoint(filepath=saving_path, save_weights_only=False)
+        dataset_length = len(dataset['text'])
+        steps_per_epoch = (dataset_length // batch_size)
+
+        history = self._model.fit(
+                self.__generate_data(dataset, batch_size),
+                epochs = epochs,
+                steps_per_epoch=steps_per_epoch,
+                callbacks=[save_model_callback]
+        )
+
+        return history
+    """
+
+
+    def train(self, data, save_path, epochs=20, batch_size=32):
+        # TODO use generator
+        text_tokenized = data['text_tokenized']
+        text_attention_masks = data['text_attention_mask']
+        text_mention_masks = data['text_mention_mask']
+        item_pbg = data['item_pbg']
+        item_glove = data['item_glove']
+        answer = data['answer']
+        #ner_tags = data['ner_tags']
+
+        self._model.fit([text_tokenized, text_attention_masks, text_mention_masks, item_pbg, item_glove],
                 answer, epochs=epochs, batch_size=batch_size)
 
        
     def test(self, data, batch_size=32):
         text_tokenized = data['text_tokenized']
         text_attention_masks = data['text_attention_mask']
-        text_sf_masks = data['text_sf_mask']
+        text_mention_masks = data['text_mention_mask']
         item_pbg = data['item_pbg']
-        item_embedded = data['item_embedded']
+        item_glove = data['item_glove']
         answer = data['answer']
         #ner_tags = data['ner_tags']
 
-        results = self._model.evaluate([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
+        results = self._model.evaluate([text_tokenized, text_attention_masks, text_mention_masks, item_pbg, item_glove],
                 answer, batch_size=batch_size)
 
         self._logger.info(f'Loss: {results[0]}')
@@ -116,9 +233,9 @@ class ELModel:
     def predict(self, data, batch_size=32):
         text_tokenized = data['text_tokenized']
         text_attention_masks = data['text_attention_mask']
-        text_sf_masks = data['text_sf_mask']
+        text_mention_masks = data['text_mention_mask']
         item_pbg = data['item_pbg']
-        item_embedded = data['item_embedded']
+        item_glove = data['item_glove']
 
         # Explanation cf. comment in load()
         global sess
@@ -128,7 +245,7 @@ class ELModel:
 
             # TODO Dependending on the model, results is either a 2-dim. array (load(Cetoli)) or one value (__init__()).
             # How to handle this? Change completely to my models and don't use Cetoli's anymore? Have two ELModel() classes, one for the loaded models, one for mine?
-            results = self._model.predict([text_tokenized, text_attention_masks, text_sf_masks, item_pbg, item_embedded],
+            results = self._model.predict([text_tokenized, text_attention_masks, text_mention_masks, item_pbg, item_glove],
                     batch_size=batch_size, verbose=0)
 
         self._logger.debug(f'Prediction: {results}')
