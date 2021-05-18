@@ -38,7 +38,9 @@ class EntityDisambiguator:
                 # matching score prediction
                 matching_score = self._model.predict(sample)
                 self._logger.info(f'Score: "{mention["sf"]}" vs. {candidate["item_id"]}: {matching_score}')
-                candidate['score'] = matching_score
+                # TODO does GERBIL also accept a score < 1.0?
+                #candidate['score'] = matching_score
+                candidate['score'] = 1.0
                 candidates.append(candidate)
 
             # Winning entity to which the mention likely refers; mention is disambiguated now
@@ -65,8 +67,8 @@ class EntityDisambiguator:
 
     def __make_wikidata_url(self, item_id):
         # TODO move to utils.py
-        wikidata_url_prefix = 'https://www.wikidata.org/wiki'
-        return f'{wikidata_url_prefix}/{item_id}'
+        wikidata_url_prefix = 'http://www.wikidata.org/entity/'
+        return f'{wikidata_url_prefix}{item_id}'
 
 
     def __make_dbpedia_url(self, entity):
