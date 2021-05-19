@@ -39,7 +39,8 @@ logging.basicConfig(level=log_level, format=log_format,
 
 # Entity linking settings
 config = {
-    'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint:04d}.ckpt')
+    'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint:04d}.ckpt'),
+    'use_filter' : True
     }
 
 # Initialize linker

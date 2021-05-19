@@ -8,6 +8,7 @@ class EntityDisambiguator:
     def __init__(self, model_path):
         self._logger = logging.getLogger(__name__)
         self._preprocessor = Preprocessor()
+        # TODO load model just right before predict(), s.t. it's not loaded e.g. if there are no candidates
         self._model = ELModel()
         self._model.load(model_path)
 
