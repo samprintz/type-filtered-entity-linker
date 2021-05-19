@@ -1,8 +1,11 @@
 import logging
 import requests
+import time
 
 class Wikidata:
     _url_sparql = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
+    _request_headers = headers = {"User-Agent": "FilteredELBot/0.0"}
+    _retry_after_time = 10 # 10 seconds
     # TODO Second line required?
     # TODO replace or filter ?label with rdfs:label or skos:altLabel
     _query_get_by_label = '''
@@ -32,10 +35,10 @@ class Wikidata:
 
         items = []
 
-        response = requests.get(self._url_sparql, params={'query': self._query_get_by_label % label, 'format': 'json'})
+        response = requests.get(self._url_sparql, headers=self._request_headers, params={'query': self._query_get_by_label % label, 'format': 'json'})
 
         if not response.status_code == 200:
-            self._logger.debug(f'Request for "{label}" failed (status code {response.status_code} ({response.reason}))')
+            self._logger.info(f'Request for "{label}" failed (status code {response.status_code} ({response.reason}))')
             return items
 
         try:
@@ -81,7 +84,18 @@ class Wikidata:
         response = requests.get(self._url_sparql, params={'query': query, 'format': 'json'})
 
         if not response.status_code == 200:
-            self._logger.debug(f'Request for "{item_id}" failed (status code {response.status_code} ({response.reason}))')
+            self._logger.info(f'Request for "{item_id}" failed (status code {response.status_code} ({response.reason}))')
+            if response.status_code == 429: # too many requests
+                try:
+                    retry_after_time = int(response.headers["Retry-After"])
+                except KeyError:
+                    self._logger.info(f'Could not find "Retry-After" time in header, using default time ({self._retry_after_time} seconds)')
+                    retry_after_time = self._retry_after_time
+
+                self._logger.info(f'Sleep for {retry_after_time} seconds...')
+                time.sleep(retry_after_time)
+                self._logger.info(f'Continue')
+
             return rdf_types
 
         try:
