@@ -268,7 +268,7 @@ class ELModel:
         self._logger.info(f'Saving into {filepath}')
         self._model.save(filepath)
 
-    def load(self, filepath):
+    def load(self, filepath, checkpoint_type):
         """
         Load a model from a file. This overwrites the model built in __init__() stored at self._model.
         """
@@ -283,5 +283,12 @@ class ELModel:
         graph = tf.compat.v1.get_default_graph()
         tf.compat.v1.keras.backend.set_session(sess)
 
-        self._model = tf.keras.models.load_model(filepath)
+        if checkpoint_type == 'weights':
+            # TODO The model from the weights must correspond to the model defined above!
+            # Currently not given.
+            self._logger.error(f'Checkpoint type {checkpoint_type} not supported')
+            model = ELModel()
+            model._model.load_weights(filepath)
+        else: # == 'model'
+            self._model = tf.keras.models.load_model(filepath)
 

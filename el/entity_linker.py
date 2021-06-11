@@ -40,7 +40,8 @@ class EntityLinker:
     def disambiguate_entities(self, doc):
         self.__print_step_heading('Entity Disambiguation')
         if self._entity_disambiguator is None:
-            self._entity_disambiguator = EntityDisambiguator(self._config['model_path'])
+            self._entity_disambiguator = EntityDisambiguator(self._config['model_path'],
+                    self._config['model_checkpoint_type'])
         self._entity_disambiguator.process(doc)
         return doc
 

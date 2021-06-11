@@ -96,6 +96,7 @@ class Wikidata:
                 time.sleep(retry_after_time)
                 self._logger.info(f'Continue')
 
+            # TODO is the current item skipped? -> solution cf. Cetoli adaptations
             return rdf_types
 
         try:

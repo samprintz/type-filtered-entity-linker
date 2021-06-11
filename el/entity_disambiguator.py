@@ -5,12 +5,12 @@ from el.model import ELModel
 
 class EntityDisambiguator:
 
-    def __init__(self, model_path):
+    def __init__(self, model_path, model_checkpoint_type):
         self._logger = logging.getLogger(__name__)
         self._preprocessor = Preprocessor()
         # TODO load model just right before predict(), s.t. it's not loaded e.g. if there are no candidates
         self._model = ELModel()
-        self._model.load(model_path)
+        self._model.load(model_path, model_checkpoint_type)
 
     def process(self, doc):
         # For each mention in the text
