@@ -5,7 +5,6 @@ class SpacyMentionDetector:
 
     def __init__(self):
         self._logger = logging.getLogger(__name__)
-        self._nlp = spacy.load("en_core_web_sm")
 
 
     def process(self, doc):
@@ -27,3 +26,16 @@ class SpacyMentionDetector:
             'ner_type' : ent.label_
             }
 
+
+class SpacyMentionDetectorSm(SpacyMentionDetector):
+
+    def __init__(self):
+        self._nlp = spacy.load("en_core_web_sm")
+        super(SpacyMentionDetectorSm, self).__init__()
+
+
+class SpacyMentionDetectorTrf(SpacyMentionDetector):
+
+    def __init__(self):
+        self._nlp = spacy.load("en_core_web_trf")
+        super(SpacyMentionDetectorTrf, self).__init__()

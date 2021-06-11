@@ -1,6 +1,6 @@
 import logging
 
-from el.mention_detector import SpacyMentionDetector
+from el.mention_detector import SpacyMentionDetectorSm, SpacyMentionDetectorTrf
 from el.candidate_generator import WikidataSparqlCandidateGenerator
 from el.entity_disambiguator import EntityDisambiguator
 
@@ -24,7 +24,7 @@ class EntityLinker:
     def detect_mentions(self, doc):
         self.__print_step_heading('Mention Detection')
         if self._mention_detector is None:
-            self._mention_detector = SpacyMentionDetector()
+            self._mention_detector = SpacyMentionDetectorTrf()
         self._mention_detector.process(doc)
         return doc
 
