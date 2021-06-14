@@ -5,9 +5,9 @@ from inout.wikidata import Wikidata
 
 class WikidataSparqlCandidateGenerator:
 
-    def __init__(self, use_filter=False):
+    def __init__(self, use_filter=False, type_cache_dir=None):
         self._logger = logging.getLogger(__name__)
-        self._wikidata = Wikidata()
+        self._wikidata = Wikidata(type_cache_dir)
         self._use_filter = use_filter
 
         if self._use_filter:

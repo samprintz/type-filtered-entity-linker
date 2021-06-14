@@ -10,7 +10,8 @@ from el.entity_linker import EntityLinker
 
 dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
-    'models' : os.path.join(os.getcwd(), 'data', 'models')
+    'models' : os.path.join(os.getcwd(), 'data', 'models'),
+    'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache')
     }
 
 for path in dirs.values():
@@ -67,6 +68,7 @@ def main():
     config = {
         'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
         'model_checkpoint_type' : model_checkpoint_type,
+        'type_cache_dir' : dirs['type_cache'],
         'use_filter' : True
         }
 

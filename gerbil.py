@@ -15,7 +15,8 @@ app = Flask(__name__)
 
 dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
-    'models' : os.path.join(os.getcwd(), 'data', 'models')
+    'models' : os.path.join(os.getcwd(), 'data', 'models'),
+    'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache')
     }
 
 for path in dirs.values():
@@ -23,9 +24,10 @@ for path in dirs.values():
         os.makedirs(path)
 
 # Model settings
-model_type = 'pbg'
-model_name = 'model-20210503-2'
-model_checkpoint = 20
+model_type = 'bert_pbg'
+model_name = 'model-20210529-1'
+model_checkpoint_epoch = 60
+model_checkpoint_type = 'model'
 
 # Logging settings
 log_level = logging.INFO
@@ -39,7 +41,9 @@ logging.basicConfig(level=log_level, format=log_format,
 
 # Entity linking settings
 config = {
-    'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint:04d}.ckpt'),
+    'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
+    'model_checkpoint_type' : model_checkpoint_type,
+    'type_cache_dir' : dirs['type_cache'],
     'use_filter' : True
     }
 

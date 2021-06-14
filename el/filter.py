@@ -45,22 +45,25 @@ class TypeFilter:
             for candidate in mention['candidates']:
                 candidate['rdf_types'] = self._wikidata.get_types_of_item(candidate['item_id'])
 
-                # Is any RDF type related to a NER type
-                for rdf_type in candidate['rdf_types']:
-                    # Is the RDF type in the dictionary? If so, what is the key (the NER type)?
-                    for ner_type in self._ner_type_to_wikidata_map.keys():
-                        if rdf_type in self._ner_type_to_wikidata_map[ner_type]:
-                            candidate['ner_type'] = ner_type
-                            break
-
-                # Remove the candidate if it has the wrong NER type
                 if not candidate["rdf_types"]: # empty
                     self._logger.info(f'Removed candidate "{candidate["item_id"]}" having no NER type')
-                elif 'ner_type' in candidate and candidate['ner_type'] == mention['ner_type']:
+
+                # Is any RDF type related to a NER type?
+                else:
+                    for rdf_type in candidate['rdf_types']:
+                        # Is the RDF type in the dictionary? If so, what is the key (the NER type)?
+                        for ner_type in self._ner_type_to_wikidata_map.keys():
+                            if rdf_type['id'] in self._ner_type_to_wikidata_map[ner_type]:
+                                candidate['ner_type'] = ner_type
+                                break
+
+                # Add the candidate if it has the correct NER type
+                if 'ner_type' in candidate and candidate['ner_type'] == mention['ner_type']:
                     mention['filtered_candidates'].append(candidate)
                     self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct NER type {candidate["ner_type"]}')
                 else:
-                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong NER types: {candidate["rdf_types"]}')
+                    rdf_types_list_string = ', '.join([rdf_type['label'] for rdf_type in candidate['rdf_types']])
+                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong NER types: {rdf_types_list_string}' )
 
             mention['unfiltered_candidates'] = mention['candidates']
             mention['candidates'] = mention['filtered_candidates']
