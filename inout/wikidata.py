@@ -15,6 +15,10 @@ class Wikidata:
                 ?s ?p ?o .
             }
             '''
+    # TODO Test the filters
+            #FILTER regex (str(?o), '^((?!statement).)*$') .
+            #FILTER regex (str(?o), '^((?!https).)*$') .
+            #} LIMIT 1500
     _query_get_types_by_id = '''
             SELECT DISTINCT ?type ?typeLabel {
                 %s wdt:P31 ?type .
