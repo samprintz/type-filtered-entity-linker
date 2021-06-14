@@ -10,24 +10,24 @@ class TypeFilter:
         # Wikidata type manually identified
         # TODO add the other URLs (from https://lov.linkeddata.es/dataset/lov or directly Wikidata?)
         self._ner_type_to_wikidata_map = {
-                'CARDINAL': 'https://www.wikidata.org/wiki/Q163875',
-                'DATE': 'TODO',
-                'EVENT': 'TODO',
-                'FAC': 'TODO',
-                'GPE': 'TODO',
-                'LANGUAGE': 'TODO',
-                'LAW': 'TODO',
-                'LOC': 'http://rdf.geospecies.org/ont/geospecies#Location',
-                'MONEY': 'TODO',
-                'NORP': 'http://www.wikidata.org/entity/Q41710', # Nationalities or religious or political groups
-                'ORDINAL': 'http://www.wikidata.org/entity/Q191780',
-                'ORG': 'http://xmlns.com/foaf/0.1/Organization',
-                'PERCENT': 'TODO',
-                'PERSON': 'http://xmlns.com/foaf/0.1/Person',
-                'PRODUCT': 'TODO',
-                'QUANTITY': 'TODO',
-                'TIME': 'TODO',
-                'WORK_OF_ART': 'TODO'
+                'CARDINAL': ['https://www.wikidata.org/wiki/Q163875'],
+                'DATE': ['TODO'],
+                'EVENT': ['TODO'],
+                'FAC': ['TODO'],
+                'GPE': ['TODO'],
+                'LANGUAGE': ['TODO'],
+                'LAW': ['TODO'],
+                'LOC': ['http://rdf.geospecies.org/ont/geospecies#Location'],
+                'MONEY': ['TODO'],
+                'NORP': ['http://www.wikidata.org/entity/Q41710'], # Nationalities or religious or political groups
+                'ORDINAL': ['http://www.wikidata.org/entity/Q191780'],
+                'ORG': ['http://xmlns.com/foaf/0.1/Organization'],
+                'PERCENT': ['TODO'],
+                'PERSON': ['http://xmlns.com/foaf/0.1/Person', 'http://www.wikidata.org/entity/Q5'],
+                'PRODUCT': ['TODO'],
+                'QUANTITY': ['TODO'],
+                'TIME': ['TODO'],
+                'WORK_OF_ART': ['TODO', 'http://www.wikidata.org/entity/Q11424']
             }
 
 
@@ -37,9 +37,15 @@ class TypeFilter:
 
             # If the mention has no candidates
             if not mention['candidates']:
-                mention['unfiltered_candidates'] = mention['candidates']
+                mention['filtered_candidates'] = mention['candidates']
                 self._logger.info(f'No candidates for {mention["sf"]}, skipping')
+                continue
 
+            # If the mention has no NER type
+            if not 'ner_type' in mention:
+                mention['filtered_candidates'] = mention['candidates']
+                self._logger.info(f'No NER type for {mention["sf"]}, skipping')
+                continue
 
             mention['filtered_candidates'] = []
             for candidate in mention['candidates']:
@@ -60,10 +66,10 @@ class TypeFilter:
                 # Add the candidate if it has the correct NER type
                 if 'ner_type' in candidate and candidate['ner_type'] == mention['ner_type']:
                     mention['filtered_candidates'].append(candidate)
-                    self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct NER type {candidate["ner_type"]}')
+                    self._logger.debug(f'Added candidate "{candidate["item_id"]}" with correct NER type {candidate["ner_type"]}')
                 else:
                     rdf_types_list_string = ', '.join([rdf_type['label'] for rdf_type in candidate['rdf_types']])
-                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong NER types: {rdf_types_list_string}' )
+                    self._logger.debug(f'Removed candidate "{candidate["item_id"]}" with wrong NER types: {rdf_types_list_string}' )
 
             mention['unfiltered_candidates'] = mention['candidates']
             mention['candidates'] = mention['filtered_candidates']

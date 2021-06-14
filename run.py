@@ -69,6 +69,7 @@ def main():
         'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
         'model_checkpoint_type' : model_checkpoint_type,
         'type_cache_dir' : dirs['type_cache'],
+        'candidates_limit' : 100,
         'use_filter' : True
         }
 

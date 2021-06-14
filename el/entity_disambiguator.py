@@ -13,6 +13,10 @@ class EntityDisambiguator:
         self._model.load(model_path, model_checkpoint_type)
 
     def process(self, doc):
+        # If no mentions, return document
+        if len(doc['mentions']) is 0:
+            return doc
+
         # For each mention in the text
         for mention in doc['mentions']:
 

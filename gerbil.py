@@ -3,6 +3,7 @@ from flask import Flask, request, Response
 import logging
 import os
 import pprint
+import sys
 
 from el.model import ELModel
 from el.entity_linker import EntityLinker
@@ -44,6 +45,7 @@ config = {
     'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
     'model_checkpoint_type' : model_checkpoint_type,
     'type_cache_dir' : dirs['type_cache'],
+    'candidates_limit' : 100,
     'use_filter' : True
     }
 
@@ -63,7 +65,10 @@ def index():
     logger.info(doc['uri'])
     logger.info(doc['text'])
 
-    doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
+    if app.config.get('experiment_type') is 'd2kb':
+        doc_with_candidates, doc_with_entities = linker.d2kb(doc)
+    else:
+        doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
 
     result = nif.generate_nif(doc)
 
@@ -96,5 +101,11 @@ class LoggingMiddleware(object):
 #   app.run()
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'd2kb':
+            app.config['experiment_type'] = 'd2kb'
+            logger.info(f'Run as D2KB')
+        else:
+            logger.warn(f'Unknown command line argument "{sys.argv[1]}"')
     app.wsgi_app = LoggingMiddleware(app.wsgi_app)
     app.run()

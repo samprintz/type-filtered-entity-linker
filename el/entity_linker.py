@@ -21,6 +21,25 @@ class EntityLinker:
         return doc_with_mentions, doc_with_candidates, doc_with_entities
 
 
+    """
+    GERBIL A2KB task
+    Input: Document
+    """
+    def a2kb(self, doc):
+        return process(doc)
+
+
+    """
+    GERBIL D2KB task
+    Input: Document with already marked entities
+    https://github.com/dice-group/gerbil/wiki/D2KB
+    """
+    def d2kb(self, doc_with_mentions):
+        doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        doc_with_entities = self.disambiguate_entities(doc_with_candidates)
+        return doc_with_candidates, doc_with_entities
+
+
     def detect_mentions(self, doc):
         self.__print_step_heading('Mention Detection')
         if self._mention_detector is None:
@@ -32,7 +51,8 @@ class EntityLinker:
     def generate_candidates(self, doc):
         self.__print_step_heading('Candidate Generation')
         if self._candidate_generator is None:
-            self._candidate_generator = WikidataSparqlCandidateGenerator(self._config['use_filter'], self._config['type_cache_dir'])
+            self._candidate_generator = WikidataSparqlCandidateGenerator(self._config['use_filter'],
+                    self._config['type_cache_dir'], self._config['candidates_limit'])
         self._candidate_generator.process(doc)
         return doc
 
