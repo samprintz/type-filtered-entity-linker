@@ -1,0 +1,239 @@
+from inout import dataset
+from inout.wikidata import Wikidata
+import logging
+import os
+from tqdm import tqdm
+
+
+dirs = {
+    'logging' : os.path.join(os.getcwd(), 'log'),
+    'models' : os.path.join(os.getcwd(), 'data', 'models'),
+    'wikidata_disamb' : os.path.join(os.getcwd(), 'data', 'wikidata_disamb'),
+    'wikidata_type_recognition' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
+    'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache'),
+    'subclass_cache' : os.path.join(os.getcwd(), 'data', 'subclass_cache')
+    }
+
+for path in dirs.values():
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+# Logging settings
+log_level = logging.INFO
+log_format = "%(asctime)s: %(levelname)-1.1s %(name)s:%(lineno)d] %(message)s"
+
+_logger = logging.getLogger()
+logging.basicConfig(level=log_level, format=log_format,
+        handlers=[logging.StreamHandler()])
+
+
+# Wikidata adapter
+_wikidata = Wikidata(dirs['type_cache'], dirs['subclass_cache'])
+
+# Mappings
+_entity_type_subclass_map = {} # superclass -> subclass
+_entity_type_superclass_map = {} # subclass -> superclass
+
+# List of high-level entity types
+_entity_type_superclasses = [
+        'http://www.wikidata.org/entity/Q215627', # person
+        'http://www.wikidata.org/entity/Q163875', # cardinal
+        'http://www.wikidata.org/entity/Q838948', # work of art
+        'http://www.wikidata.org/entity/Q13442814', # article in scholarly journal
+        'http://www.wikidata.org/entity/Q571', # book
+        'http://www.wikidata.org/entity/Q618123', # geographical feature
+        'http://www.wikidata.org/entity/Q43229', # organization
+        'http://www.wikidata.org/entity/Q811979', # architectural structure
+        #'http://www.wikidata.org/entity/Q7187', # gene
+        #'http://www.wikidata.org/entity/Q11173', # chemical compound
+        #'http://www.wikidata.org/entity/Q6999', # astronomical object
+        'http://www.wikidata.org/entity/Q16521', # taxon
+        'http://www.wikidata.org/entity/Q1656682', # event
+        'http://www.wikidata.org/entity/Q83620' # thoroughfare
+]
+
+
+def convert_data(data_raw):
+    """
+    Read the raw JSON dataset and create for each line one sample for the
+    correct Wikidata ID and another for the wrong ID.
+    """
+
+    _logger.debug(f'Converting dataset ({len(data_raw)} lines)...')
+    data = []
+    line_count = 0
+    sample_count = 0
+    sample_count_failed = 0
+
+    for line in tqdm(data_raw):
+        line_count += 1
+
+        # Once for correct Wikidata item
+        try:
+            sample = convert_data_row(line['text'], line['string'], line['correct_id'])
+            data.append(sample)
+            sample_count += 1
+        except Exception as e:
+            _logger.info(str(e))
+            sample_count_failed += 1
+
+        # Once for wrong Wikidata item
+        try:
+            sample = convert_data_row(line['text'], line['string'], line['wrong_id'])
+            data.append(sample)
+            sample_count += 1
+        except Exception as e:
+            _logger.info(str(e))
+            sample_count_failed += 1
+
+    _logger.debug(f'Prepared {sample_count} samples from {line_count} lines (skipped {sample_count_failed} failed)')
+
+    return data
+
+
+def convert_data_row(text, string, item_id):
+    """
+    Convert one line of the JSON file like described in convert_data().
+    """
+    sample = {}
+
+    sample['text'] = text
+    sample['item_name'] = string
+    sample['item_id'] = item_id
+    sample['item_types'] = []
+    sample['item_types_detailed'] = []
+
+    return sample
+
+
+def augment_data_with_entity_types(data_raw):
+    """
+    Augment a sample with two lists:
+    1. List of entity types explicitly given in statements in Wikidata.
+    2. List of derived high-level entity entity types (derived using Wikidata's
+    ontology.
+    """
+    _logger.info(f'Augmenting dataset with entity types ({len(data_raw)} samples)...')
+    data = []
+    sample_count = 0
+    sample_count_failed = 0
+
+    for sample in tqdm(data_raw):
+        try:
+            sample = augment_sample_with_entity_types(sample)
+            data.append(sample)
+            sample_count += 1
+        except Exception as e:
+            _logger.info(str(e))
+            sample_count_failed += 1
+
+    _logger.info(f'Augmented {sample_count} samples with entity types (skipped {sample_count_failed} failed samples)')
+
+    return data
+
+
+def augment_sample_with_entity_types(sample):
+    """
+    Augment a sample with the two lists described in
+    augment_data_with_entity_types().
+    """
+    item_id = sample['item_id']
+
+    # Request the entity types explicitly given in statements in Wikidata
+    entity_types_detailed = _wikidata.get_types_of_item(item_id)
+    sample['item_types_detailed'] = entity_types_detailed
+
+    # Derive high-level entity types from Wikidata
+    for entity_type in entity_types_detailed:
+        try:
+            superclasses = get_type_superclass(entity_type['id'])
+            for superclass in superclasses:
+                if superclass not in sample['item_types']:
+                    sample['item_types'].append(superclass)
+        except KeyError:
+            # TODO Add default class (class "other" or so)
+            _logger.debug(f'Item {item_id}: Entity type {entity_type["id"]} does not match any superclass, skipping')
+
+    _logger.debug(f'Item {item_id}: Found {len(sample["item_types"])} high-level types')
+    return sample
+
+
+def get_type_superclass(item_id):
+    """
+    Return all high-level entity types that match with the given entity type.
+    """
+    return _entity_type_superclass_map[item_id]
+
+    
+def get_entity_type_subclass_map(entity_types):
+    """
+    Returns for a list of (high-level) entity types a map, mapping each entity
+    type to all of its subclasses:
+    superclass -> subclasses
+    """
+    _logger.info(f'Requesting entity type subclass map from Wikidata ({len(entity_types)} types)...')
+
+    subclass_map = {}
+    for entity_type in entity_types:
+        subclasses = _wikidata.get_type_subclasses(entity_type)
+        subclass_map[entity_type] = subclasses
+
+    _logger.info(f'Requested entity type subclass map from Wikidata')
+
+    return subclass_map
+
+
+def get_entity_type_superclass_map(entity_type_subclass_map):
+    """
+    Return superclass map, mapping
+    subclass -> superclass
+    """
+    _logger.info(f'Creating entity type superclass map...')
+    return reverse_entity_type_subclass_map(entity_type_subclass_map)
+
+
+def reverse_entity_type_subclass_map(entity_type_subclass_map):
+    """
+    Reverse the entity subclass map s.t. the mapping is
+    subclass -> superclass
+    """
+    entity_type_superclass_map = {}
+
+    for superclass, subclasses in tqdm(entity_type_subclass_map.items()):
+        for subclass in subclasses:
+            if subclass['id'] in entity_type_superclass_map:
+                entity_type_superclass_map[subclass['id']].append(superclass)
+            else:
+                entity_type_superclass_map[subclass['id']] = [superclass]
+
+    return entity_type_superclass_map
+
+
+def main():
+    # Get entity subclass map
+    global _entity_type_subclass_map # TODO
+    _entity_type_subclass_map = get_entity_type_subclass_map(_entity_type_superclasses)
+    global _entity_type_superclass_map # TODO
+    _entity_type_superclass_map = get_entity_type_superclass_map(_entity_type_subclass_map)
+
+    # Specify dataset
+    dataset_train = 'train' # train/test/dev
+    dataset_part = 'small' # small/medium/full
+
+    # Load data
+    data_raw = dataset.get_wikidata_disamb_dataset(dirs['wikidata_disamb'],
+            dataset_train, dataset_part)
+
+    # Convert data
+    data = convert_data(data_raw)
+    data_with_types = augment_data_with_entity_types(data)
+
+    # Write data to file
+    dataset.write_wikidata_typerec_dataset(dirs['wikidata_type_recognition'],
+            data_with_types, dataset_train, dataset_part)
+
+
+if __name__ == '__main__':
+    main()
+
