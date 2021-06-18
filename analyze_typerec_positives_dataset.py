@@ -1,10 +1,11 @@
 import datetime
-from inout import dataset
-from inout.wikidata import Wikidata
-from generate_type_dataset import _entity_type_superclasses
 import logging
 import os
 from tqdm import tqdm
+
+from inout import dataset
+from inout.wikidata import Wikidata
+import generate_typerec_positives_dataset
 
 
 dirs = {
@@ -34,12 +35,13 @@ logging.basicConfig(level=log_level, format=log_format,
 
 def analyze_data(data_raw):
     """
-    Analyze the frequency of high-level types.
+    Analyze the frequency of high-level types in Wikidata-
+    TypeRec-Positives dataset.
     """
-    _logger.debug(f'Analyze Wikidata TypeRec dataset ({len(data_raw)} lines)...')
+    _logger.info(f'Count frequency of types in Wikidata-TypeRec-Positives dataset ({len(data_raw)} lines)...')
 
     # Create dictionary to count high-level types (each initialized with 0)
-    item_type_counts = dict.fromkeys(_entity_type_superclasses, 0)
+    item_type_counts = dict.fromkeys(generate_typerec_positives_dataset._entity_type_superclasses, 0)
 
     for line in tqdm(data_raw):
         item_types = line['item_types']
@@ -47,10 +49,35 @@ def analyze_data(data_raw):
         for item_type in item_types:
             item_type_counts[item_type] += 1
 
-    _logger.info('=== Result ===')
-    _logger.info('')
+    _logger.info('=== Frequencies ===')
     for item_type, counter in item_type_counts.items():
         _logger.info(f'{item_type}: {counter}')
+
+    return item_type_counts
+
+
+def get_type_probability_distribution(data_raw):
+    """
+    Analyze the probability distribution of high-level types in Wikidata-
+    TypeRec-Positives dataset.
+    """
+    _logger.info(f'Analyze probability distribution of types in Wikidata-TypeRec-Positives dataset ({len(data_raw)} lines)...')
+
+    # Analyze the type frequencies
+    item_type_counts = analyze_data(data_raw)
+
+    # Sum of all types
+    types_total = sum(item_type_counts.values())
+
+    # Calculate distribution
+    _logger.info('=== Probability distribution ===')
+    item_type_probability = {}
+    for item_type, counter in item_type_counts.items():
+        probability = counter / types_total
+        item_type_probability[item_type] = probability
+        _logger.info(f'{item_type}: {probability}')
+
+    return item_type_probability
 
 
 def main():
@@ -59,11 +86,12 @@ def main():
     dataset_part = 'small' # small/medium/full
 
     # Load data
-    data_raw = dataset.get_wikidata_typerec_dataset(dirs['wikidata_typerec'],
+    data_raw = dataset.get_wikidata_typerec_positives_dataset(dirs['wikidata_typerec'],
             dataset_train, dataset_part)
 
     # Analyze types
-    analyze_data(data_raw)
+    #analyze_data(data_raw)
+    get_type_probability_distribution(data_raw)
 
 
 if __name__ == '__main__':

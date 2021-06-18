@@ -9,7 +9,7 @@ dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
     'models' : os.path.join(os.getcwd(), 'data', 'models'),
     'wikidata_disamb' : os.path.join(os.getcwd(), 'data', 'wikidata_disamb'),
-    'wikidata_type_recognition' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
+    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
     'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache'),
     'subclass_cache' : os.path.join(os.getcwd(), 'data', 'subclass_cache')
     }
@@ -165,7 +165,7 @@ def get_type_superclass(item_id):
     """
     return _entity_type_superclass_map[item_id]
 
-    
+
 def get_entity_type_subclass_map(entity_types):
     """
     Returns for a list of (high-level) entity types a map, mapping each entity
@@ -230,7 +230,7 @@ def main():
     data_with_types = augment_data_with_entity_types(data)
 
     # Write data to file
-    dataset.write_wikidata_typerec_dataset(dirs['wikidata_type_recognition'],
+    dataset.write_wikidata_typerec_positives_dataset(dirs['wikidata_typerec'],
             data_with_types, dataset_train, dataset_part)
 
 
