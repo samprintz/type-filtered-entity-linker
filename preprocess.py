@@ -4,6 +4,7 @@ from transformers import DistilBertTokenizer
 from tqdm import tqdm
 
 from inout.pbg import PBG
+from typerec import types
 
 
 class Preprocessor:
@@ -18,6 +19,7 @@ class Preprocessor:
         self._use_cache = use_cache
         self._tokenizer = self.__init_tokenizer()
         self._pbg = self.__init_pbg(sample_mode=sample_mode, use_cache=use_cache)
+        self._type_index = self.__init_type_index()
 
 
     def __init_tokenizer(self):
@@ -31,6 +33,17 @@ class Preprocessor:
 
     def __init_pbg(self, sample_mode, use_cache):
         return PBG(sample_mode, use_cache)
+
+
+    def __init_type_index(self):
+        """
+        Create an index s.t. each type gets an ID (e.g. person -> 1,
+        organization -> 2, ...
+        """
+        type_index = {}
+        for index, label in enumerate(types.type_list):
+            type_index[label] = index
+        return type_index
 
 
     def prepare_sample(self, sample_raw):
@@ -110,6 +123,125 @@ class Preprocessor:
         return data
 
 
+    def reshape_dataset(self, data_pre, for_training=True):
+        """
+        Reshapes a preprocessed dataset (list of samples) to a suitable input (dict of features) for model.train() or
+        model.predict().
+        """
+        # TODO merge with reshape_typerec_dataset()
+
+        if not isinstance(data_pre, list):
+            raise ValueError(f'reshape_dataset() requires a list as input')
+
+        self._logger.debug(f'Reshaping dataset ({len(data_pre)} samples)...')
+        data = {}
+
+        keys = ['text_tokenized', 'text_attention_mask', 'text_mention_mask', 'item_pbg', 'item_glove']
+        if for_training:
+            keys.append('answer')
+
+        for key in keys:
+            data[key] = []
+
+        for sample in tqdm(data_pre):
+            for key in keys:
+                data[key].append(sample[key])
+
+        for key in keys:
+            data[key] = np.asarray(data[key])
+
+        self._logger.debug(f'Reshaped dataset')
+
+        return data
+
+
+    def prepare_typerec_sample(self, line):
+        """
+        Preprocess one line of the JSON file for the training.
+        """
+        sample = {}
+
+        sample['text'] = line['text']
+        #sample['text_tokenized'] = None # set by add_tokens()
+        #sample['text_attention_mask'] = None # set by add_tokens()
+        sample['item_name'] = line['item_name']
+        #self.add_tokens(sample)
+        #sample['text_mention_mask'] = None # set by add_mention_mask()
+        #self.add_mention_mask(sample)
+        sample['item_id'] = line['item_id']
+        sample['text_and_mention_tokenized'] = None # set by add_text_and_mention()
+        sample['text_and_mention_mask'] = None # set by add_text_and_mention()
+        self.add_text_and_mention(sample)
+        sample['item_type'] = line['item_type']
+        sample['item_type_index'] = None # set by add_type_index()
+        self.add_type_index(sample)
+        sample['answer'] = line['answer']
+
+        return sample
+
+
+    def prepare_typerec_dataset(self, data_raw):
+        """
+        Proprocess the raw JSON of the Wikidata-TypeRec dataset by creating
+        one sample for each line.
+        Additionally add the tokens for the text and the embeddings for the Wikidata items.
+        Requires preprocess.reshape_typerec_dataset() before feeding it into model.train().
+        """
+
+        self._logger.info(f'Preparing Wikidata-TypeRec dataset ({len(data_raw)} lines)...')
+        data = []
+        line_count = 0
+        sample_count = 0
+        sample_count_failed = 0
+
+        for line in tqdm(data_raw):
+            line_count += 1
+
+            # TODO Negative samples are not needed, so filter them out
+            if not line['answer']:
+                continue
+
+            try:
+                sample = self.prepare_typerec_sample(line)
+                data.append(sample)
+                sample_count += 1
+            except Exception as e:
+                self._logger.info(str(e))
+                sample_count_failed += 1
+
+        self._logger.info(f'Prepared {sample_count} samples from {line_count} lines (skipped {sample_count_failed} failed)')
+
+        return data
+
+
+    def reshape_typerec_dataset(self, data_pre, features):
+        """
+        Reshapes a preprocessed dataset (list of samples) to a suitable input
+        (dict of features) for model.train() or model.predict().
+        """
+        # TODO merge with reshape_dataset() (only differences is the list of keys/features)
+
+        if not isinstance(data_pre, list):
+            raise ValueError(f'reshape_dataset() requires a list as input')
+
+        self._logger.debug(f'Reshaping dataset ({len(data_pre)} samples)...')
+        data = {}
+
+        for feature in features:
+            data[feature] = []
+
+        for sample in tqdm(data_pre):
+            for feature in features:
+                data[feature].append(sample[feature])
+
+        for feature in features:
+            data[feature] = np.asarray(data[feature])
+
+        self._logger.debug(f'Reshaped dataset')
+
+        return data
+
+
     def add_tokens(self, sample):
         """
         Add BERT tokens, attention masks and padding of the input text to sample.
@@ -141,34 +273,24 @@ class Preprocessor:
         sample['text_mention_mask'] = mention_mask
 
 
-    def reshape_dataset(self, data_pre, for_training=True):
+    def add_text_and_mention(self, sample):
         """
-        Reshapes a preprocessed dataset (list of samples) to a suitable input (dict of features) for model.train() or
-        model.predict().
+        Concatenate text and mention. Add special token [SEP] between text and
+        mention. Add BERT tokens, attention masks and padding to sample.
         """
-
-        if not isinstance(data_pre, list):
-            raise ValueError(f'reshape_dataset() requires a list as input')
-
-        self._logger.debug(f'Reshaping dataset ({len(data_pre)} samples)...')
-        data = {}
-
-        keys = ['text_tokenized', 'text_attention_mask', 'text_mention_mask', 'item_pbg', 'item_glove']
-        if for_training:
-            keys.append('answer')
-
-        for key in keys:
-            data[key] = []
-
-        for sample in tqdm(data_pre):
-            for key in keys:
-                data[key].append(sample[key])
-
-        for key in keys:
-            data[key] = np.asarray(data[key])
-
-        self._logger.debug(f'Reshaped dataset')
-
-        return data
+        inputs = self._tokenizer.encode_plus(
+                text = sample['text'], # text
+                text_pair = sample['item_name'], # mention
+                add_special_tokens=True,
+                max_length=self._max_text_length,
+                padding='max_length', # TODO padding here or in model (together with item_glove)?
+                return_attention_mask=True)
+        sample['text_and_mention_tokenized'] = inputs['input_ids']
+        sample['text_and_mention_attention_mask'] = inputs['attention_mask']
 
 
+    def add_type_index(self, sample):
+        """
+        Add the index of the item type to the sample.
+        """
+        sample['item_type_index'] = self._type_index[sample['item_type']]

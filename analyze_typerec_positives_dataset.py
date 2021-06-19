@@ -5,14 +5,14 @@ from tqdm import tqdm
 
 from inout import dataset
 from inout.wikidata import Wikidata
-import generate_typerec_positives_dataset
+from typerec import types
 
 
 dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
     'models' : os.path.join(os.getcwd(), 'data', 'models'),
     'wikidata_disamb' : os.path.join(os.getcwd(), 'data', 'wikidata_disamb'),
-    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
+    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_typerec'),
     'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache'),
     'subclass_cache' : os.path.join(os.getcwd(), 'data', 'subclass_cache')
     }
@@ -41,7 +41,7 @@ def analyze_data(data_raw):
     _logger.info(f'Count frequency of types in Wikidata-TypeRec-Positives dataset ({len(data_raw)} lines)...')
 
     # Create dictionary to count high-level types (each initialized with 0)
-    item_type_counts = dict.fromkeys(generate_typerec_positives_dataset._entity_type_superclasses, 0)
+    item_type_counts = dict.fromkeys(types.type_list, 0)
 
     for line in tqdm(data_raw):
         item_types = line['item_types']
@@ -82,7 +82,7 @@ def get_type_probability_distribution(data_raw):
 
 def main():
     # Specify dataset
-    dataset_train = 'train' # train/test/dev
+    dataset_train = 'test' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data

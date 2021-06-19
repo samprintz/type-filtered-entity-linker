@@ -7,14 +7,13 @@ from tqdm import tqdm
 from inout import dataset
 from inout.wikidata import Wikidata
 import analyze_typerec_positives_dataset
-import generate_typerec_positives_dataset
 
 
 dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
     'models' : os.path.join(os.getcwd(), 'data', 'models'),
     'wikidata_disamb' : os.path.join(os.getcwd(), 'data', 'wikidata_disamb'),
-    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
+    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_typerec'),
     'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache'),
     'subclass_cache' : os.path.join(os.getcwd(), 'data', 'subclass_cache')
     }
@@ -75,14 +74,14 @@ def generate_typerec_dataset(data_raw):
 
         # Add the sample a second time with one correct types
         correct_sample = sample.copy() # deep copy
-        correct_sample['type'] = correct_type
+        correct_sample['item_type'] = correct_type
         correct_sample['answer'] = True
         data.append(correct_sample)
         sample_count += 1
 
         # Add the sample once with a randomly drawn wrong type
         wrong_sample = sample.copy() # deep copy
-        wrong_sample['type'] = wrong_type
+        wrong_sample['item_type'] = wrong_type
         wrong_sample['answer'] = False
         data.append(wrong_sample)
         sample_count += 1
@@ -113,7 +112,7 @@ def get_wrong_type(item_types, item_type_probabilities):
 
 def main():
     # Specify dataset
-    dataset_train = 'train' # train/test/dev
+    dataset_train = 'test' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data

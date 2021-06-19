@@ -52,6 +52,19 @@ def write_wikidata_typerec_positives_dataset(dataset_dir, dataset, train, part):
     _logger.info(f'Done')
 
 
+def get_wikidata_typerec_dataset(dataset_dir, train, part):
+    """
+    Read Wikidata-TypeRec dataset.
+    """
+    dataset_filename = f'wikidata-typerec-{train}.{part}.json'
+    _logger.info(f'Reading {train} data ({part})...')
+    dataset_path = os.path.join(dataset_dir, dataset_filename)
+    with open(dataset_path, encoding='utf8') as f:
+        json_data = json.load(f)
+    _logger.info(f'Read {len(json_data)} lines')
+    return json_data
+
+
 def write_wikidata_typerec_dataset(dataset_dir, dataset, train, part):
     """
     Write Wikidata-TypeRec dataset to JSON file.

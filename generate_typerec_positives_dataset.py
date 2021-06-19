@@ -1,15 +1,17 @@
-from inout import dataset
-from inout.wikidata import Wikidata
 import logging
 import os
 from tqdm import tqdm
+
+from inout import dataset
+from inout.wikidata import Wikidata
+from typerec import types
 
 
 dirs = {
     'logging' : os.path.join(os.getcwd(), 'log'),
     'models' : os.path.join(os.getcwd(), 'data', 'models'),
     'wikidata_disamb' : os.path.join(os.getcwd(), 'data', 'wikidata_disamb'),
-    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_type_recognition'),
+    'wikidata_typerec' : os.path.join(os.getcwd(), 'data', 'wikidata_typerec'),
     'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache'),
     'subclass_cache' : os.path.join(os.getcwd(), 'data', 'subclass_cache')
     }
@@ -34,24 +36,6 @@ _wikidata = Wikidata(dirs['type_cache'], dirs['subclass_cache'])
 # Mappings
 _entity_type_subclass_map = {} # superclass -> subclass
 _entity_type_superclass_map = {} # subclass -> superclass
-
-# List of high-level entity types
-_entity_type_superclasses = [
-        'http://www.wikidata.org/entity/Q215627', # person
-        'http://www.wikidata.org/entity/Q163875', # cardinal
-        'http://www.wikidata.org/entity/Q838948', # work of art
-        'http://www.wikidata.org/entity/Q13442814', # article in scholarly journal
-        'http://www.wikidata.org/entity/Q571', # book
-        'http://www.wikidata.org/entity/Q618123', # geographical feature
-        'http://www.wikidata.org/entity/Q43229', # organization
-        'http://www.wikidata.org/entity/Q811979', # architectural structure
-        #'http://www.wikidata.org/entity/Q7187', # gene
-        #'http://www.wikidata.org/entity/Q11173', # chemical compound
-        #'http://www.wikidata.org/entity/Q6999', # astronomical object
-        'http://www.wikidata.org/entity/Q16521', # taxon
-        'http://www.wikidata.org/entity/Q1656682', # event
-        'http://www.wikidata.org/entity/Q83620' # thoroughfare
-]
 
 
 def convert_data(data_raw):
@@ -213,12 +197,12 @@ def reverse_entity_type_subclass_map(entity_type_subclass_map):
 def main():
     # Get entity subclass map
     global _entity_type_subclass_map # TODO
-    _entity_type_subclass_map = get_entity_type_subclass_map(_entity_type_superclasses)
+    _entity_type_subclass_map = get_entity_type_subclass_map(types.type_list)
     global _entity_type_superclass_map # TODO
     _entity_type_superclass_map = get_entity_type_superclass_map(_entity_type_subclass_map)
 
     # Specify dataset
-    dataset_train = 'train' # train/test/dev
+    dataset_train = 'test' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data
