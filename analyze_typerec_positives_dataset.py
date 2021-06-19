@@ -82,7 +82,7 @@ def get_type_probability_distribution(data_raw):
 
 def main():
     # Specify dataset
-    dataset_train = 'test' # train/test/dev
+    dataset_train = 'dev' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data

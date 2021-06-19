@@ -112,7 +112,7 @@ def get_wrong_type(item_types, item_type_probabilities):
 
 def main():
     # Specify dataset
-    dataset_train = 'test' # train/test/dev
+    dataset_train = 'dev' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data

@@ -202,7 +202,7 @@ def main():
     _entity_type_superclass_map = get_entity_type_superclass_map(_entity_type_subclass_map)
 
     # Specify dataset
-    dataset_train = 'test' # train/test/dev
+    dataset_train = 'dev' # train/test/dev
     dataset_part = 'small' # small/medium/full
 
     # Load data

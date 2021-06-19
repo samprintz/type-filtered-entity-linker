@@ -1,7 +1,8 @@
 import json
 import logging
 import os
-from datasets import load_dataset
+
+from preprocess import Preprocessor
 
 
 _logger = logging.getLogger(__name__)
@@ -75,3 +76,52 @@ def write_wikidata_typerec_dataset(dataset_dir, dataset, train, part):
     with open(dataset_path, 'w') as f:
         json.dump(dataset, f, indent=2)
     _logger.info(f'Done')
+
+
+def load_typerec_train_datasets(dataset_dir, dataset_name, dataset_partial, features):
+    """
+    Loads the datasets for training i.e. the train and dev dataset.
+    Loading includes reading the dataset from the file and preprocessing it.
+    Features are the features the are actually required and should be reshaped
+    in reshape().
+    """
+    datasets = []
+    dataset_parts = ['train', 'dev']
+
+    # Do for the train and the dev dataset
+    for dataset_part in dataset_parts:
+        _logger.info(f'=== Load {dataset_part} dataset ===')
+
+        # Load data
+        data_raw = get_wikidata_typerec_dataset(dataset_dir,
+                dataset_part, dataset_partial)
+
+        # Preprocess data
+        preprocessor = Preprocessor()
+        data_pre = preprocessor.prepare_typerec_dataset(data_raw)
+        dataset = preprocessor.reshape_typerec_dataset(data_pre, features)
+        datasets.append(dataset)
+
+    return datasets
+
+
+def load_typerec_test_dataset(dataset_dir, dataset_name, dataset_partial, features):
+    """
+    Loads the dataset for testing.
+    Loading includes reading the dataset from the file and preprocessing it.
+    Features are the features the are actually required and should be reshaped
+    in reshape().
+    """
+    dataset_part = 'test'
+    _logger.info(f'=== Load {dataset_part} dataset ===')
+
+    # Load data
+    data_raw = get_wikidata_typerec_dataset(dataset_dir,
+            dataset_part, dataset_partial)
+
+    # Preprocess data
+    preprocessor = Preprocessor()
+    data_pre = preprocessor.prepare_typerec_dataset(data_raw)
+    dataset = preprocessor.reshape_typerec_dataset(data_pre, features)
+
+    return dataset

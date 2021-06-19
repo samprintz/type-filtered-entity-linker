@@ -129,11 +129,6 @@ class TypeRecModel:
         if validation_steps_per_epoch < 1:
             validation_steps_per_epoch = 1
 
-        # Print training settings
-        self._logger.info('')
-        self._logger.info('=== Training settings ===')
-        self._logger.info(f'epochs={epochs}, batch_size={batch_size}, dataset_length_train={dataset_length_train}, dataset_length_val={dataset_length_val}, steps_per_epoch={steps_per_epoch}')
-
         # Train the model
         history = self._model.fit(
                 self.__generate_data(dataset_train, batch_size),
