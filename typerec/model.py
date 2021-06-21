@@ -6,29 +6,28 @@ import random
 import sys
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.layers import Input, Dense, Activation, Dropout, Concatenate, BatchNormalization
+from tensorflow.keras.layers import Input, Dense, Activation, BatchNormalization
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification, DistilBertConfig, TFDistilBertModel
+
+import utils
 
 
 class TypeRecModel:
     _max_text_length = 512
-    _item_pbg_vocab_size = 200
-    _item_glove_vocab_size = 300 * 3
-
     _text_vector_size = 150
-    _item_vector_size = 150
-
-    _bert_embedding_size = 768
-    _hidden_layer2_size = 250
     _output_size = 1
-
     _distil_bert = 'distilbert-base-uncased'
-    _memory_dim = 100
-    _stack_dimension = 2
 
 
-    def __init__(self):
-        self._logger = logging.getLogger(__name__)
+    def __init__(self, config):
+        self._config = config
+
+        # Logging
+        self._logger = logging.getLogger(__name__) # own logger
+        self._tf_logger = tf.get_logger() # TensorFlow logger
+        self._tf_logger.handlers = [] # remove the original handler from the TensorFlow logger
+        logging.basicConfig(level=self._config.log_level, format=self._config.log_format,
+                handlers=[logging.FileHandler(self._config.log_path), logging.StreamHandler()])
 
         tf.compat.v1.disable_eager_execution()
         for gpu in tf.config.experimental.list_physical_devices('GPU'):
@@ -36,9 +35,10 @@ class TypeRecModel:
         tf.compat.v1.reset_default_graph()
 
         # Part I: Question text sequence | mention -> BERT
-        config = DistilBertConfig(dropout=0.2, attention_dropout=0.2) # TODO dropout as config parameter
-        config.output_hidden_states = False
-        transformer_model = TFDistilBertModel.from_pretrained(self._distil_bert, config=config)
+        bert_config = DistilBertConfig(dropout=self._config.dropout_bert,
+                attention_dropout=self._config.dropout_bert_attention)
+        bert_config.output_hidden_states = False
+        transformer_model = TFDistilBertModel.from_pretrained(self._distil_bert, config=bert_config)
 
         input_text_and_mention_tokenized = Input(shape=(self._max_text_length,),
                 dtype='int32', name='text_and_mention_tokenized')
@@ -105,37 +105,22 @@ class TypeRecModel:
             yield X, y
 
 
-    def train(self, datasets, saving_dir, epochs=32, batch_size=32):
+    def train(self, dataset_train, dataset_dev, saving_dir, epochs=32, batch_size=32):
         saving_path = saving_dir + "/cp-{epoch:04d}.ckpt"
 
         # Initialize callbacks
         save_model_callback = tf.keras.callbacks.ModelCheckpoint(filepath=saving_path,
                 save_weights_only=False)
         logging_callback = tf.keras.callbacks.LambdaCallback(
-                on_epoch_end = lambda epoch, logs: self._logger.info(f'\nEpoch {epoch + 1}: loss: {logs["loss"]} - accuracy: {logs["accuracy"]} - val_loss: {logs["val_loss"]} - val_accuracy: {logs["val_accuracy"]}')
-        )
-
-        # Train dataset
-        dataset_train = datasets[0]
-        dataset_length_train = len(next(iter(dataset_train)))
-        steps_per_epoch = dataset_length_train // batch_size
-        if steps_per_epoch < 1:
-            steps_per_epoch = 1
-
-        # Validation dataset
-        dataset_val = datasets[1]
-        dataset_length_val = len(next(iter(dataset_val)))
-        validation_steps_per_epoch = dataset_length_val // batch_size
-        if validation_steps_per_epoch < 1:
-            validation_steps_per_epoch = 1
+                on_epoch_end = lambda epoch, logs: utils.log_epoch_metrics(epoch, logs))
 
         # Train the model
         history = self._model.fit(
                 self.__generate_data(dataset_train, batch_size),
                 epochs = epochs,
-                steps_per_epoch=steps_per_epoch,
-                validation_data=self.__generate_data(dataset_val, batch_size),
-                validation_steps=validation_steps_per_epoch,
+                steps_per_epoch=self._config.steps_per_epoch_train,
+                validation_data=self.__generate_data(dataset_dev, batch_size),
+                validation_steps=self._config.steps_per_epoch_dev,
                 callbacks=[save_model_callback, logging_callback]
         )
 
@@ -229,3 +214,4 @@ class TypeRecModel:
             self._logger.error(f'Checkpoint type {checkpoint_type} not supported')
         else: # == 'model'
             self._model = tf.keras.models.load_model(filepath)
+            #self._config = config # this is done already on __init__() and it shouldn't change
