@@ -3,7 +3,7 @@ import logging
 import os
 from tqdm import tqdm
 
-from config import Config
+from config import ModelConfig
 from inout import dataset
 from typerec.model import TypeRecModel
 import utils
@@ -14,15 +14,15 @@ def main():
     settings = {
         'dataset_partial' : 'full', # small/medium/full
         'model_type' : 'typerec',
-        'model_name' : 'model-20210621-2',
-        'epochs' : 20,
+        'model_name' : 'model-20210624-1',
+        'epochs' : 2,
         'batch_size' : 128,
         'dropout_bert' : 0.2,
         'dropout_bert_attention' : 0.2
         }
 
     # Create config
-    config = Config(settings, is_test=False)
+    config = ModelConfig(settings, 'test')
 
     # Logging settings
     logging.basicConfig(level=config.log_level, format=config.log_format,

@@ -1,4 +1,5 @@
 import logging
+import os
 
 _logger = logging.getLogger(__name__)
 
@@ -37,9 +38,17 @@ def get_dataset_length(dataset):
 
 def get_steps_per_epoch(dataset_length, batch_size):
     """
-    Returns the steps per epoch for a given dataset and a batch size
+    Returns the steps per epoch for a given dataset and a batch size.
     """
     steps_per_epoch = dataset_length // batch_size
     if steps_per_epoch < 1:
         steps_per_epoch = 1
     return steps_per_epoch
+
+
+def get_model_path(models_dir, model_type, model_name, checkpoint_epoch):
+    """
+    Builds the file path to a specific neural model.
+    """
+    return os.path.join(models_dir, model_type, model_name,
+            f'cp-{checkpoint_epoch:04d}.ckpt')

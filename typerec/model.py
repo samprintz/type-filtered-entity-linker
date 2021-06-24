@@ -9,6 +9,7 @@ import numpy as np
 from tensorflow.keras.layers import Input, Dense, Activation, BatchNormalization
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification, DistilBertConfig, TFDistilBertModel
 
+from typerec import types
 import utils
 
 
@@ -29,11 +30,18 @@ class TypeRecModel:
         logging.basicConfig(level=self._config.log_level, format=self._config.log_format,
                 handlers=[logging.FileHandler(self._config.log_path), logging.StreamHandler()])
 
+        # Disable eager execution
         tf.compat.v1.disable_eager_execution()
+
+        # Use GPU (not CPU)
         for gpu in tf.config.experimental.list_physical_devices('GPU'):
             tf.config.experimental.set_memory_growth(gpu, True)
+
+        # Reset default graph
         tf.compat.v1.reset_default_graph()
 
+
+    def __initialize(self, config):
         # Part I: Question text sequence | mention -> BERT
         bert_config = DistilBertConfig(dropout=self._config.dropout_bert,
                 attention_dropout=self._config.dropout_bert_attention)
@@ -108,6 +116,9 @@ class TypeRecModel:
     def train(self, dataset_train, dataset_dev, saving_dir, epochs=32, batch_size=32):
         saving_path = saving_dir + "/cp-{epoch:04d}.ckpt"
 
+        # Initialize model
+        self.__initialize(self._config)
+
         # Initialize callbacks
         save_model_callback = tf.keras.callbacks.ModelCheckpoint(filepath=saving_path,
                 save_weights_only=False)
@@ -137,6 +148,8 @@ class TypeRecModel:
         for epoch in range(1, epochs + 1):
             self._logger.info('')
             self._logger.info(f'--- Epoch {str(epoch)}/{str(epochs)} ---')
+
+            # Load model from checkpoint
             self.load(os.path.join(saving_dir, f'cp-{epoch:04d}.ckpt'))
             results = self._model.evaluate([
                             data['text_and_mention_tokenized'],
@@ -172,25 +185,24 @@ class TypeRecModel:
 
 
     def predict(self, data, batch_size=32):
-        text_tokenized = data['text_tokenized']
-        text_attention_masks = data['text_attention_mask']
-        text_mention_masks = data['text_mention_mask']
-        item_pbg = data['item_pbg']
-        item_glove = data['item_glove']
+        text_and_mention_tokenized = data['text_and_mention_tokenized']
+        text_and_mention_attention_mask = data['text_and_mention_attention_mask']
 
         # Explanation cf. comment in load()
         global sess
         global graph
         with graph.as_default():
             tf.compat.v1.keras.backend.set_session(sess)
-            results = self._model.predict([text_tokenized, text_attention_masks, text_mention_masks, item_pbg, item_glove],
+            results = self._model.predict([text_and_mention_tokenized, text_and_mention_attention_mask],
                     batch_size=batch_size, verbose=0)
 
         self._logger.debug(f'Prediction: {results}')
-        score = results[0]
-        self._logger.debug(f'Score: {score}')
 
-        return score
+        type_index = int(results[0][0])
+        entity_type = types.get_type_by_index(type_index)
+        self._logger.debug(f'Entity type: {entity_type}')
+
+        return entity_type
 
 
     def load(self, filepath, checkpoint_type='model'):

@@ -1,18 +1,14 @@
 import logging
 
-from el.filter import TypeFilter
+from config import Config
 from inout.wikidata import Wikidata
 
 class WikidataSparqlCandidateGenerator:
 
-    def __init__(self, use_filter=False, type_cache_dir=None, limit=None):
+    def __init__(self, limit=None):
         self._logger = logging.getLogger(__name__)
-        self._wikidata = Wikidata(type_cache_dir)
-        self._use_filter = use_filter
+        self._wikidata = Wikidata(Config.dirs['type_cache'], Config.dirs['subclass_cache'])
         self._limit = limit
-
-        if self._use_filter:
-            self._filter = TypeFilter(self._wikidata)
 
 
     def process(self, doc):
@@ -23,10 +19,6 @@ class WikidataSparqlCandidateGenerator:
                 candidate = {'item_id': candidate_item_id}
                 mention['candidates'].append(candidate)
             self._logger.info(f'Generated {len(mention["candidates"])} candidates for mention "{mention["sf"]}"')
-
-        # Filter by NER type
-        if self._use_filter:
-            doc = self._filter.process(doc)
 
         # Limit results
         if self._limit:

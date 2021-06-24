@@ -34,7 +34,6 @@ logging.basicConfig(level=log_level, format=log_format,
 _wikidata = Wikidata(dirs['type_cache'], dirs['subclass_cache'])
 
 # Mappings
-_entity_type_subclass_map = {} # superclass -> subclass
 _entity_type_superclass_map = {} # subclass -> superclass
 
 
@@ -143,63 +142,10 @@ def augment_sample_with_entity_types(sample):
     return sample
 
 
-def get_type_superclass(item_id):
-    """
-    Return all high-level entity types that match with the given entity type.
-    """
-    return _entity_type_superclass_map[item_id]
-
-
-def get_entity_type_subclass_map(entity_types):
-    """
-    Returns for a list of (high-level) entity types a map, mapping each entity
-    type to all of its subclasses:
-    superclass -> subclasses
-    """
-    _logger.info(f'Requesting entity type subclass map from Wikidata ({len(entity_types)} types)...')
-
-    subclass_map = {}
-    for entity_type in entity_types:
-        subclasses = _wikidata.get_type_subclasses(entity_type)
-        subclass_map[entity_type] = subclasses
-
-    _logger.info(f'Requested entity type subclass map from Wikidata')
-
-    return subclass_map
-
-
-def get_entity_type_superclass_map(entity_type_subclass_map):
-    """
-    Return superclass map, mapping
-    subclass -> superclass
-    """
-    _logger.info(f'Creating entity type superclass map...')
-    return reverse_entity_type_subclass_map(entity_type_subclass_map)
-
-
-def reverse_entity_type_subclass_map(entity_type_subclass_map):
-    """
-    Reverse the entity subclass map s.t. the mapping is
-    subclass -> superclass
-    """
-    entity_type_superclass_map = {}
-
-    for superclass, subclasses in tqdm(entity_type_subclass_map.items()):
-        for subclass in subclasses:
-            if subclass['id'] in entity_type_superclass_map:
-                entity_type_superclass_map[subclass['id']].append(superclass)
-            else:
-                entity_type_superclass_map[subclass['id']] = [superclass]
-
-    return entity_type_superclass_map
-
-
 def main():
     # Get entity subclass map
-    global _entity_type_subclass_map # TODO
-    _entity_type_subclass_map = get_entity_type_subclass_map(types.type_list)
     global _entity_type_superclass_map # TODO
-    _entity_type_superclass_map = get_entity_type_superclass_map(_entity_type_subclass_map)
+    _entity_type_superclass_map = types.get_entity_type_superclass_map(types.type_list)
 
     # Specify dataset
     dataset_train = 'dev' # train/test/dev

@@ -19,7 +19,6 @@ class Preprocessor:
         self._use_cache = use_cache
         self._tokenizer = self.__init_tokenizer()
         self._pbg = self.__init_pbg(sample_mode=sample_mode, use_cache=use_cache)
-        self._type_index = self.__init_type_index()
 
 
     def __init_tokenizer(self):
@@ -33,17 +32,6 @@ class Preprocessor:
 
     def __init_pbg(self, sample_mode, use_cache):
         return PBG(sample_mode, use_cache)
-
-
-    def __init_type_index(self):
-        """
-        Create an index s.t. each type gets an ID (e.g. person -> 1,
-        organization -> 2, ...
-        """
-        type_index = {}
-        for index, label in enumerate(types.type_list):
-            type_index[label] = index
-        return type_index
 
 
     def prepare_sample(self, sample_raw):
@@ -155,7 +143,7 @@ class Preprocessor:
         return data
 
 
-    def prepare_typerec_sample(self, line):
+    def prepare_typerec_sample(self, line, for_training=True):
         """
         Preprocess one line of the JSON file for the training.
         """
@@ -168,14 +156,16 @@ class Preprocessor:
         #self.add_tokens(sample)
         #sample['text_mention_mask'] = None # set by add_mention_mask()
         #self.add_mention_mask(sample)
-        sample['item_id'] = line['item_id']
         sample['text_and_mention_tokenized'] = None # set by add_text_and_mention()
         sample['text_and_mention_mask'] = None # set by add_text_and_mention()
         self.add_text_and_mention(sample)
-        sample['item_type'] = line['item_type']
-        sample['item_type_index'] = None # set by add_type_index()
-        self.add_type_index(sample)
-        sample['answer'] = line['answer']
+
+        if for_training:
+            sample['item_id'] = line['item_id']
+            sample['item_type'] = line['item_type']
+            sample['item_type_index'] = None # set by add_type_index()
+            self.add_type_index(sample)
+            sample['answer'] = line['answer']
 
         return sample
 
@@ -293,4 +283,4 @@ class Preprocessor:
         """
         Add the index of the item type to the sample.
         """
-        sample['item_type_index'] = self._type_index[sample['item_type']]
+        sample['item_type_index'] = types.get_index_of_type(sample['item_type'])

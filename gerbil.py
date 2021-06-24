@@ -45,6 +45,7 @@ config = {
     'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
     'model_checkpoint_type' : model_checkpoint_type,
     'type_cache_dir' : dirs['type_cache'],
+    'filter_model_path' : os.path.join(dirs['models'], 'typerec', model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
     'candidates_limit' : 100,
     'use_filter' : True
     }

@@ -22,7 +22,7 @@ def main():
         }
 
     # Create config
-    config = Config(settings, is_test=True)
+    config = Config('test', settings)
 
     # Logging settings
     logging.basicConfig(level=config.log_level, format=config.log_format,

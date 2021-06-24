@@ -2,6 +2,7 @@ import logging
 
 from el.mention_detector import SpacyMentionDetectorSm, SpacyMentionDetectorTrf
 from el.candidate_generator import WikidataSparqlCandidateGenerator
+from el.filter import NERTypeFilter, BERTTypeFilter
 from el.entity_disambiguator import EntityDisambiguator
 
 class EntityLinker:
@@ -11,12 +12,15 @@ class EntityLinker:
         self._config = config
         self._mention_detector = None
         self._candidate_generator = None
+        self._candidate_filter = None
         self._entity_disambiguator = None
 
 
     def process(self, doc):
         doc_with_mentions = self.detect_mentions(doc)
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        if self._config.filter:
+            doc_with_candidates = self.filter_candidates(doc_with_candidates)
         doc_with_entities = self.disambiguate_entities(doc_with_candidates)
         return doc_with_mentions, doc_with_candidates, doc_with_entities
 
@@ -36,6 +40,8 @@ class EntityLinker:
     """
     def d2kb(self, doc_with_mentions):
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        if self.filter:
+            doc_with_candidates = self.filter_candidates(doc_with_candidates)
         doc_with_entities = self.disambiguate_entities(doc_with_candidates)
         return doc_with_candidates, doc_with_entities
 
@@ -51,17 +57,25 @@ class EntityLinker:
     def generate_candidates(self, doc):
         self.__print_step_heading('Candidate Generation')
         if self._candidate_generator is None:
-            self._candidate_generator = WikidataSparqlCandidateGenerator(self._config['use_filter'],
-                    self._config['type_cache_dir'], self._config['candidates_limit'])
+            self._candidate_generator = WikidataSparqlCandidateGenerator(
+                    self._config.candidates_limit)
         self._candidate_generator.process(doc)
+        return doc
+
+
+    def filter_candidates(self, doc):
+        self.__print_step_heading('Type Filter')
+        #self._filter = NERTypeFilter()
+        self._filter = BERTTypeFilter(self._config, self._config.filter_model_path)
+        self._filter.process(doc)
         return doc
 
 
     def disambiguate_entities(self, doc):
         self.__print_step_heading('Entity Disambiguation')
         if self._entity_disambiguator is None:
-            self._entity_disambiguator = EntityDisambiguator(self._config['model_path'],
-                    self._config['model_checkpoint_type'])
+            self._entity_disambiguator = EntityDisambiguator(self._config.ed_model_path,
+                    self._config.ed_model_checkpoint_type)
         self._entity_disambiguator.process(doc)
         return doc
 
