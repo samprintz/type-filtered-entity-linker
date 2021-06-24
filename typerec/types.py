@@ -100,3 +100,10 @@ def get_type_by_index(index):
     Return the type of a given index.
     """
     return type_list[index - 1] # TODO re-train model with new indices
+
+
+def get_types_count():
+    """
+    Return number of different types.
+    """
+    return len(type_list)

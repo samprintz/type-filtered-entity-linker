@@ -3,8 +3,9 @@ import logging
 import os
 from tqdm import tqdm
 
-from config import Config
+from config import ModelConfig
 from inout import dataset
+from typerec import types
 from typerec.model import TypeRecModel
 import utils
 
@@ -12,17 +13,17 @@ import utils
 def main():
     # Model and training settings
     settings = {
-        'dataset_partial' : 'full', # small/medium/full
+        'dataset_partial' : 'small', # small/medium/full
         'model_type' : 'typerec',
-        'model_name' : 'model-20210621-2',
-        'epochs' : 20,
-        'batch_size' : 128,
+        'model_name' : 'model-20210624-2',
+        'epochs' : 4,
+        'batch_size' : 1,
         'dropout_bert' : 0.2,
         'dropout_bert_attention' : 0.2
         }
 
     # Create config
-    config = Config('test', settings)
+    config = ModelConfig(settings, 'test')
 
     # Logging settings
     logging.basicConfig(level=config.log_level, format=config.log_format,
@@ -31,7 +32,7 @@ def main():
 
     # Load data
     features = ['text_and_mention_tokenized', 'text_and_mention_attention_mask',
-            'item_type_index']
+            'item_type_onehot']
     dataset_test = dataset.load_typerec_test_dataset(
             dataset_dir=config.dirs['wikidata_typerec'],
             dataset_name='wikidata-typerec',
@@ -42,6 +43,7 @@ def main():
     config.dataset_length_test = utils.get_dataset_length(dataset_test)
     config.steps_per_epoch_test = utils.get_steps_per_epoch(
             config.dataset_length_test, config.batch_size)
+    config.types_count = types.get_types_count()
 
     # Initialize the model and test it
     utils.log_experiment_settings(settings=settings, is_test=True)

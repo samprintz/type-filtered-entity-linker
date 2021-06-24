@@ -2,6 +2,7 @@ import logging
 import numpy as np
 from transformers import DistilBertTokenizer
 from tqdm import tqdm
+from sklearn.preprocessing import OneHotEncoder
 
 from inout.pbg import PBG
 from typerec import types
@@ -19,6 +20,7 @@ class Preprocessor:
         self._use_cache = use_cache
         self._tokenizer = self.__init_tokenizer()
         self._pbg = self.__init_pbg(sample_mode=sample_mode, use_cache=use_cache)
+        self._one_hot_encoder = self.__init_one_hot_encoder()
 
 
     def __init_tokenizer(self):
@@ -32,6 +34,13 @@ class Preprocessor:
 
     def __init_pbg(self, sample_mode, use_cache):
         return PBG(sample_mode, use_cache)
+
+
+    def __init_one_hot_encoder(self):
+        one_hot_encoder = OneHotEncoder(sparse=False)
+        types_array = np.array(types.type_list).reshape(-1, 1)
+        one_hot_encoder.fit(types_array)
+        return one_hot_encoder
 
 
     def prepare_sample(self, sample_raw):
@@ -163,8 +172,10 @@ class Preprocessor:
         if for_training:
             sample['item_id'] = line['item_id']
             sample['item_type'] = line['item_type']
-            sample['item_type_index'] = None # set by add_type_index()
-            self.add_type_index(sample)
+            #sample['item_type_index'] = None # set by add_type_index()
+            #self.add_type_index(sample)
+            sample['item_type_onehot'] = None # set by add_type_onehot()
+            self.add_type_onehot(sample)
             sample['answer'] = line['answer']
 
         return sample
@@ -284,3 +295,11 @@ class Preprocessor:
         Add the index of the item type to the sample.
         """
         sample['item_type_index'] = types.get_index_of_type(sample['item_type'])
+
+
+    def add_type_onehot(self, sample):
+        """
+        Add the one-hot encoding of the item type to the sample.
+        """
+        item_type_array = np.array(sample['item_type']).reshape(-1, 1)
+        sample['item_type_onehot'] = self._one_hot_encoder.transform(item_type_array)[0]

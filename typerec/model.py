@@ -6,6 +6,7 @@ import random
 import sys
 import tensorflow as tf
 import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score
 from tensorflow.keras.layers import Input, Dense, Activation, BatchNormalization
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification, DistilBertConfig, TFDistilBertModel
 
@@ -16,7 +17,6 @@ import utils
 class TypeRecModel:
     _max_text_length = 512
     _text_vector_size = 150
-    _output_size = 1
     _distil_bert = 'distilbert-base-uncased'
 
 
@@ -59,8 +59,8 @@ class TypeRecModel:
         bert_outputs = BatchNormalization()(cls_token)
         bert_outputs = Dense(self._text_vector_size)(bert_outputs)
         bert_outputs = Activation('relu')(bert_outputs)
-        bert_outputs = Dense(self._output_size)(bert_outputs)
-        bert_outputs = Activation('sigmoid')(bert_outputs)
+        bert_outputs = Dense(self._config.types_count)(bert_outputs)
+        bert_outputs = Activation('softmax')(bert_outputs)
 
         # Compile model
         optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
@@ -69,8 +69,8 @@ class TypeRecModel:
                 inputs=[input_text_and_mention_tokenized, input_text_and_mention_attention_mask],
                 outputs=bert_outputs)
         self._model.get_layer('distilbert').trainable = False # make BERT layers untrainable
-        self._model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=[
-                tf.keras.metrics.Accuracy(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()])
+        self._model.compile(optimizer=optimizer, loss="categorical_crossentropy", metrics=[
+                tf.keras.metrics.CategoricalAccuracy()])
         #self._model.summary()
 
 
@@ -82,7 +82,7 @@ class TypeRecModel:
             batch = {
                     'text_and_mention_tokenized': [],
                     'text_and_mention_attention_mask': [],
-                    'item_type_index': []
+                    'item_type_onehot': []
                     }
 
             # Draw a (ordered) batch from the (shuffled) dataset
@@ -91,9 +91,9 @@ class TypeRecModel:
                 if i == dataset_length: # re-shuffle when processed whole dataset
                     i = 0
                     lists = list(zip(dataset['text_and_mention_tokenized'],
-                            dataset['text_and_mention_attention_mask'], dataset['item_type_index']))
+                            dataset['text_and_mention_attention_mask'], dataset['item_type_onehot']))
                     random.shuffle(lists)
-                    dataset['text_and_mention_tokenized'], dataset['text_and_mention_attention_mask'], dataset['item_type_index'] = zip(*lists)
+                    dataset['text_and_mention_tokenized'], dataset['text_and_mention_attention_mask'], dataset['item_type_onehot'] = zip(*lists)
                     #TODO rather stop iteration?
                     # raise StopIteration
 
@@ -108,7 +108,7 @@ class TypeRecModel:
             X = {}
             X['text_and_mention_tokenized'] = np.asarray(batch['text_and_mention_tokenized'])
             X['text_and_mention_attention_mask'] = np.asarray(batch['text_and_mention_attention_mask'])
-            y = np.asarray(batch['item_type_index'])
+            y = np.asarray(batch['item_type_onehot'])
 
             yield X, y
 
@@ -154,21 +154,42 @@ class TypeRecModel:
             results = self._model.evaluate([
                             data['text_and_mention_tokenized'],
                             data['text_and_mention_attention_mask']],
-                    data['item_type_index'],
+                    data['item_type_onehot'],
                     batch_size=batch_size)
 
+            # For analyzing use predict(), as it returns the prediction
+            entity_type = self._model.predict(data)
+
+            for index, pred in enumerate(entity_type):
+                pred_label = np.argmax(entity_type[index])
+                true_label = np.argmax(data["item_type_onehot"][index])
+                self._logger.debug(f'Actual: {true_label} - predicted: {pred_label}')
+
+            # Get integer label encoding from one-hot vectors (true value)
+            true_labels = np.argmax(data["item_type_onehot"], axis=1)
+            # Get integer label encoding from softmax probability distribution (predicted value)
+            pred_labels = np.argmax(entity_type, axis=1)
+
             # Get metrics
-            precision = results[2]
-            recall = results[3]
-            f1 = 2 * 1 / (1 / results[2] + 1 / results[3])
+            average = 'macro' # None: return scores for each class; others: micro, macro, weighted
+            labels = list(range(self._config.types_count)) # [0,1,2,3,...,9,10]
+            zero_division = 1 # return 1 when there is a zero division
+            precision = precision_score(true_labels, pred_labels,
+                    average=average, labels=labels, zero_division=zero_division)
+            recall = recall_score(true_labels, pred_labels,
+                    average=average, labels=labels, zero_division=zero_division)
+            f1 = f1_score(true_labels, pred_labels,
+                    average=average, labels=labels, zero_division=zero_division)
 
-            self._logger.info(f'Loss: {results[0]}')
-            self._logger.info(f'Accuracy: {results[1]}')
-            self._logger.info(f'Precision: {precision}')
-            self._logger.info(f'Recall: {recall}')
-            self._logger.info(f'F1: {f1}')
+            self._logger.info(f'evaluate():')
+            self._logger.info(f'- Loss: {results[0]}')
+            self._logger.info(f'- Categorical accuracy: {results[1]}')
+            self._logger.info(f'predict():')
+            self._logger.info(f'- Precision: {precision}')
+            self._logger.info(f'- Recall:    {recall}')
+            self._logger.info(f'- F1:        {f1}')
 
-            # Save metrics of the epochs
+            ## Save metrics of the epochs
             precision_list[epoch] = precision
             recall_list[epoch] = recall
             f1_list[epoch] = f1
@@ -180,8 +201,8 @@ class TypeRecModel:
         self._logger.info('')
         self._logger.info(f'--- Average metrics for all epochs ({epochs} epochs) ---')
         self._logger.info(f'Precision (average): {precision_avg}')
-        self._logger.info(f'Recall (average): {recall_avg}')
-        self._logger.info(f'F1 (average): {f1_avg}')
+        self._logger.info(f'Recall (average):    {recall_avg}')
+        self._logger.info(f'F1 (average):        {f1_avg}')
 
 
     def predict(self, data, batch_size=32):
