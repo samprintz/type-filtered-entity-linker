@@ -158,17 +158,35 @@ class TypeRecModel:
                     batch_size=batch_size)
 
             # For analyzing use predict(), as it returns the prediction
-            entity_type = self._model.predict(data)
+            entity_types = self._model.predict(data)
 
-            for index, pred in enumerate(entity_type):
-                pred_label = np.argmax(entity_type[index])
-                true_label = np.argmax(data["item_type_onehot"][index])
-                self._logger.debug(f'Actual: {true_label} - predicted: {pred_label}')
+            # For logging
+            count_all = utils.get_dataset_length(data)
+            for index, pred in enumerate(entity_types):
+                # Predicted type
+                pred_type_onehot_vector = entity_types[index] # one-hot vector [1,0,...,0]
+                pred_type_uri = types.get_type_by_onehot_vector(pred_type_onehot_vector) # Wikidata URI
+                pred_type_name = types.type_dict[pred_type_uri] # Wikidata label of the type
+                pred_type_index = np.argmax(pred_type_onehot_vector) # integer encoding (e.g. 1->PER, 2->ORG)
+                # True type
+                true_type_onehot_vector = data["item_type_onehot"][index] # one-hot vector [1,0,...,0]
+                true_type_uri = types.get_type_by_onehot_vector(true_type_onehot_vector) # Wikidata URI
+                true_type_name = types.type_dict[true_type_uri] # Wikidata label of the type
+                true_type_index = np.argmax(true_type_onehot_vector) # integer encoding (e.g. 1->PER, 2->ORG)
+                # Mention and context
+                item_id = data["item_id"][index]
+                text = data["text"][index]
+                mention = data["item_name"][index]
+
+                if pred_type_index == true_type_index:
+                    self._logger.info(f'{str(index)}/{str(count_all)}: [TRUE] Predicted [{pred_type_name}] for "{mention}" ({item_id}) in "{text}"')
+                else:
+                    self._logger.info(f'{str(index)}/{str(count_all)}: [FALSE] Predicted [{pred_type_name}] instead of [{true_type_name}] for "{mention}" ({item_id}) in "{text}"')
 
             # Get integer label encoding from one-hot vectors (true value)
             true_labels = np.argmax(data["item_type_onehot"], axis=1)
             # Get integer label encoding from softmax probability distribution (predicted value)
-            pred_labels = np.argmax(entity_type, axis=1)
+            pred_labels = np.argmax(entity_types, axis=1)
 
             # Get metrics
             average = 'macro' # None: return scores for each class; others: micro, macro, weighted
@@ -217,11 +235,10 @@ class TypeRecModel:
             results = self._model.predict([text_and_mention_tokenized, text_and_mention_attention_mask],
                     batch_size=batch_size, verbose=0)
 
-        self._logger.debug(f'Prediction: {results}')
-
-        type_index = int(results[0][0])
-        entity_type = types.get_type_by_index(type_index)
-        self._logger.debug(f'Entity type: {entity_type}')
+        onehot_vector = results[0]
+        entity_type = types.get_type_by_onehot_vector(onehot_vector)
+        type_index = np.argmax(onehot_vector)
+        self._logger.info(f'Entity type: {entity_type} (index {type_index})')
 
         return entity_type
 

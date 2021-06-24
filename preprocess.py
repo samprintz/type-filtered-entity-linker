@@ -2,7 +2,6 @@ import logging
 import numpy as np
 from transformers import DistilBertTokenizer
 from tqdm import tqdm
-from sklearn.preprocessing import OneHotEncoder
 
 from inout.pbg import PBG
 from typerec import types
@@ -12,6 +11,7 @@ class Preprocessor:
     _bert_version = 'distilbert-base-uncased'
     _max_text_length = 512
     _embedding_size = 768
+    _one_hot_encoder = None
 
 
     def __init__(self, sample_mode=False, use_cache=True):
@@ -37,10 +37,7 @@ class Preprocessor:
 
 
     def __init_one_hot_encoder(self):
-        one_hot_encoder = OneHotEncoder(sparse=False)
-        types_array = np.array(types.type_list).reshape(-1, 1)
-        one_hot_encoder.fit(types_array)
-        return one_hot_encoder
+        return types.one_hot_encoder
 
 
     def prepare_sample(self, sample_raw):

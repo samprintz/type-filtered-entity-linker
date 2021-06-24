@@ -16,7 +16,7 @@ def main():
         'dataset_partial' : 'small', # small/medium/full
         'model_type' : 'typerec',
         'model_name' : 'model-20210624-2',
-        'epochs' : 4,
+        'epochs' : 10,
         'batch_size' : 1,
         'dropout_bert' : 0.2,
         'dropout_bert_attention' : 0.2
@@ -32,7 +32,7 @@ def main():
 
     # Load data
     features = ['text_and_mention_tokenized', 'text_and_mention_attention_mask',
-            'item_type_onehot']
+            'item_type_onehot', 'text', 'item_name', 'item_id'] # text, item_name, item_id for logging
     dataset_test = dataset.load_typerec_test_dataset(
             dataset_dir=config.dirs['wikidata_typerec'],
             dataset_name='wikidata-typerec',

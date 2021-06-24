@@ -25,8 +25,8 @@ def main():
         'ed_model_checkpoint_epoch' : 60,
         'ed_model_checkpoint_type' : 'model', # model/weights
         'filter' : 'bert', # spacy/bert/none
-        'filter_model_name' : 'model-20210621-2',
-        'filter_model_checkpoint_epoch' : 20,
+        'filter_model_name' : 'model-20210624-2',
+        'filter_model_checkpoint_epoch' : 10,
         'candidates_limit' : 100
         }
 

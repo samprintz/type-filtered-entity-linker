@@ -1,4 +1,6 @@
 import logging
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder
 from tqdm import tqdm
 
 from config import Config
@@ -26,6 +28,29 @@ type_list = [
         'http://www.wikidata.org/entity/Q1656682', # event
         'http://www.wikidata.org/entity/Q83620' # thoroughfare
 ]
+
+type_dict = {
+        'http://www.wikidata.org/entity/Q215627' : 'person',
+        'http://www.wikidata.org/entity/Q163875' : 'cardinal',
+        'http://www.wikidata.org/entity/Q838948' : 'work of art',
+        'http://www.wikidata.org/entity/Q13442814' : 'article in scholarly journal',
+        'http://www.wikidata.org/entity/Q571' : 'book',
+        'http://www.wikidata.org/entity/Q618123' : 'geographical feature',
+        'http://www.wikidata.org/entity/Q43229' : 'organization',
+        'http://www.wikidata.org/entity/Q811979' : 'architectural structure',
+        #'http://www.wikidata.org/entity/Q7187' : 'gene',
+        #'http://www.wikidata.org/entity/Q11173' : 'chemical compound',
+        #'http://www.wikidata.org/entity/Q6999' : 'astronomical object',
+        'http://www.wikidata.org/entity/Q16521' : 'taxon',
+        'http://www.wikidata.org/entity/Q1656682' : 'event',
+        'http://www.wikidata.org/entity/Q83620' : 'thoroughfare'
+}
+
+# Initialize one-hot encoder for entity types
+one_hot_encoder = OneHotEncoder(sparse=False)
+types_array = np.array(type_list).reshape(-1, 1)
+one_hot_encoder.fit(types_array)
+#print(one_hot_encoder.categories_)
 
 
 def get_type_superclass(type_superclass_map, type_url):
@@ -80,26 +105,33 @@ def reverse_entity_type_subclass_map(entity_type_subclass_map):
     return entity_type_superclass_map
 
 
-def get_type_index():
+#def get_type_index():
     """
     Create an index s.t. each type gets an ID (e.g. person -> 1,
     organization -> 2, ...
     """
-    return dict(enumerate(type_list))
+    #return dict(enumerate(type_list))
 
 
-def get_index_of_type(entity_type):
+#def get_index_of_type(entity_type):
     """
     Return the index of a given entity type.
     """
-    return type_list.index(entity_type)
+    #return type_list.index(entity_type)
 
 
-def get_type_by_index(index):
+#def get_type_by_index(index):
     """
     Return the type of a given index.
     """
-    return type_list[index - 1] # TODO re-train model with new indices
+    #return type_list[index - 1] # TODO re-train model with new indices
+
+
+def get_type_by_onehot_vector(onehot_vector):
+    """
+    Return the type of a given index.
+    """
+    return one_hot_encoder.inverse_transform([onehot_vector])[0][0]
 
 
 def get_types_count():
