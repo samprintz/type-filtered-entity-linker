@@ -14,7 +14,7 @@ class BERTTypeFilter:
         self._model = TypeRecModel(config) # TODO load model just in time before predict
         self._model.load(model_path)
         self._wikidata = Wikidata(Config.dirs['type_cache'], Config.dirs['subclass_cache'])
-        self._entity_type_superclass_map = types.get_entity_type_superclass_map(types.type_list) # subclass -> superclass
+        self._entity_type_superclass_map = types.get_entity_type_superclass_map(types.type_dict.keys()) # subclass -> superclass
 
 
     def process(self, doc):

@@ -238,7 +238,7 @@ class TypeRecModel:
         onehot_vector = results[0]
         entity_type = types.get_type_by_onehot_vector(onehot_vector)
         type_index = np.argmax(onehot_vector)
-        self._logger.info(f'Entity type: {entity_type} (index {type_index})')
+        self._logger.info(f'Entity type: {types.get_type_label(entity_type)} ({entity_type}, index {type_index})')
 
         return entity_type
 

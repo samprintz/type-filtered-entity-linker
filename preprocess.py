@@ -173,7 +173,6 @@ class Preprocessor:
             #self.add_type_index(sample)
             sample['item_type_onehot'] = None # set by add_type_onehot()
             self.add_type_onehot(sample)
-            sample['answer'] = line['answer']
 
         return sample
 
@@ -194,10 +193,6 @@ class Preprocessor:
 
         for line in tqdm(data_raw):
             line_count += 1
-
-            # TODO Negative samples are not needed, so filter them out
-            if not line['answer']:
-                continue
 
             try:
                 sample = self.prepare_typerec_sample(line)

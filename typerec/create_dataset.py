@@ -11,7 +11,7 @@ from typerec import types
 # Model and training settings
 settings = {
     'dataset_train' : 'dev', # train/test/dev
-    'dataset_part' : 'full', # small/medium/full
+    'dataset_part' : 'small', # small/medium/full
     'detailed_types' : False # True/False
     }
 
@@ -209,30 +209,37 @@ def remove_attribute(data, key):
 
 
 def main():
-    # Load data
-    data_raw = dataset.get_wikidata_disamb_dataset(
-            _config.dirs['wikidata_disamb'], _config.dataset_train, _config.dataset_part)
+    #dataset_train = _config.dataset_train
+    #dataset_part = _config.dataset_part
 
-    # Create dataset
-    typerec_dataset = create_typerec_dataset(data_raw)
+    # Generate all datasets for all sizes
+    for dataset_train in ['train', 'test', 'dev']:
+        for dataset_part in ['small', 'medium', 'full']:
 
-    # Analyze data
-    analyze_supertype_probability_distribution(typerec_dataset)
+            # Load data
+            data_raw = dataset.get_wikidata_disamb_dataset(
+                    _config.dirs['wikidata_disamb'], dataset_train, dataset_part)
 
-    # Remove attributes
-    typerec_dataset = remove_attribute(typerec_dataset, 'item_types')
-    if not _config.detailed_types:
-        typerec_dataset = remove_attribute(typerec_dataset, 'item_types_detailed')
+            # Create dataset
+            typerec_dataset = create_typerec_dataset(data_raw)
 
-    # Write data to file
-    if _config.detailed_types:
-        dataset.write_wikidata_typerec_detailed_dataset(
-                _config.dirs['wikidata_typerec'], typerec_dataset,
-                _config.dataset_train, _config.dataset_part)
-    else:
-        dataset.write_wikidata_typerec_dataset(
-                _config.dirs['wikidata_typerec'], typerec_dataset,
-                _config.dataset_train, _config.dataset_part)
+            # Analyze data
+            analyze_supertype_probability_distribution(typerec_dataset)
+
+            # Remove attributes
+            typerec_dataset = remove_attribute(typerec_dataset, 'item_types')
+            if not _config.detailed_types:
+                typerec_dataset = remove_attribute(typerec_dataset, 'item_types_detailed')
+
+            # Write data to file
+            if _config.detailed_types:
+                dataset.write_wikidata_typerec_detailed_dataset(
+                        _config.dirs['wikidata_typerec'], typerec_dataset,
+                        dataset_train, dataset_part)
+            else:
+                dataset.write_wikidata_typerec_dataset(
+                        _config.dirs['wikidata_typerec'], typerec_dataset,
+                        dataset_train, dataset_part)
 
 
 if __name__ == '__main__':

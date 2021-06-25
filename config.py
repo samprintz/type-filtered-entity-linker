@@ -52,7 +52,7 @@ class ModelConfig(Config):
 
 class ELConfig(Config):
 
-    def __init__(self, settings):
+    def __init__(self, settings, log_suffix):
         # Settings for entity disambiguation model
         self.ed_model_name = settings['ed_model_name']
         self.ed_model_type = settings['ed_model_type']
@@ -73,8 +73,9 @@ class ELConfig(Config):
 
         # Other settings
         self.candidates_limit = settings['candidates_limit']
+        log_suffix = f'el-{log_suffix}'
 
-        super(ELConfig, self).__init__()
+        super(ELConfig, self).__init__(log_suffix)
 
 
 
@@ -84,5 +85,6 @@ class TypeRecDatasetConfig(Config):
         self.dataset_train = settings['dataset_train']
         self.dataset_part = settings['dataset_part']
         self.detailed_types = settings['detailed_types']
+        log_suffix = f'dataset-{self.dataset_train}-{self.dataset_part}'
 
-        super(TypeRecDatasetConfig, self).__init__()
+        super(TypeRecDatasetConfig, self).__init__(log_suffix)

@@ -14,7 +14,8 @@ def main():
     try:
         text = sys.argv[1]
     except:
-        text = "Napoleon was the first emperor of the French empire."
+        #text = "Napoleon was the first emperor of the French empire."
+        text = "private university in Nanjing, China which was founded in 1888 and sponsored by American churches. It's originally named the Nanking University, the first school officially named University."
 
     doc = {'text' : text}
 
@@ -25,13 +26,13 @@ def main():
         'ed_model_checkpoint_epoch' : 60,
         'ed_model_checkpoint_type' : 'model', # model/weights
         'filter' : 'bert', # spacy/bert/none
-        'filter_model_name' : 'model-20210624-2',
-        'filter_model_checkpoint_epoch' : 10,
+        'filter_model_name' : 'model-20210625-1',
+        'filter_model_checkpoint_epoch' : 5,
         'candidates_limit' : 100
         }
 
     # Create config
-    config = ELConfig(settings)
+    config = ELConfig(settings, log_suffix='el-run')
 
     # Logging settings
     logging.basicConfig(level=config.log_level, format=config.log_format,

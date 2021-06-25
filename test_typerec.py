@@ -15,8 +15,8 @@ def main():
     settings = {
         'dataset_partial' : 'small', # small/medium/full
         'model_type' : 'typerec',
-        'model_name' : 'model-20210624-2',
-        'epochs' : 10,
+        'model_name' : 'model-20210625-2',
+        'epochs' : 5,
         'batch_size' : 1,
         'dropout_bert' : 0.2,
         'dropout_bert_attention' : 0.2
