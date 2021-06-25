@@ -28,11 +28,12 @@ def main():
         'filter' : 'bert', # spacy/bert/none
         'filter_model_name' : 'model-20210625-1',
         'filter_model_checkpoint_epoch' : 5,
+        'filter_entities_without_type' : False,
         'candidates_limit' : 100
         }
 
     # Create config
-    config = ELConfig(settings, log_suffix='el-run')
+    config = ELConfig(settings, log_suffix='run')
 
     # Logging settings
     logging.basicConfig(level=config.log_level, format=config.log_format,

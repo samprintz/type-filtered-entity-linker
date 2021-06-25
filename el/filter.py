@@ -10,6 +10,7 @@ class BERTTypeFilter:
 
     def __init__(self, config, model_path):
         self._logger = logging.getLogger(__name__)
+        self._config = config
         self._preprocessor = Preprocessor()
         self._model = TypeRecModel(config) # TODO load model just in time before predict
         self._model.load(model_path)
@@ -34,9 +35,10 @@ class BERTTypeFilter:
                     ['text_and_mention_tokenized', 'text_and_mention_attention_mask'])
 
             # Entity type prediction
+            self._logger.info(f'Predicting type of mention "{mention["sf"]}"...')
             entity_type = self._model.predict(sample)
             mention['type'] = entity_type
-            self._logger.info(f'Got type {mention["type"]} for {mention["sf"]}')
+            self._logger.debug(f'Predict type [{types.get_type_label(mention["type"])}] ({mention["type"]}) for {mention["sf"]}')
 
             # Filter candidate entities
             mention['filtered_candidates'] = []
@@ -47,8 +49,13 @@ class BERTTypeFilter:
 
                 # If the candidate entity has no type on Wikidata
                 if not candidate["rdf_types"]: # empty
-                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" having no type')
-                    continue
+                    if self._config.filter_entities_without_type:
+                        self._logger.info(f'Removed candidate "{candidate["item_id"]}" having no type')
+                        continue
+                    else:
+                        candidate_has_correct_type = True
+                        mention['filtered_candidates'].append(candidate)
+                        self._logger.info(f'Added candidate "{candidate["item_id"]}" WITHOUT any type (set settings.filter_entities_without_type=False if unwanted)')
 
                 # For each type of the candidate entity
                 candidate_has_correct_type = False
@@ -58,20 +65,20 @@ class BERTTypeFilter:
                     try:
                         supertypes = types.get_type_superclass(self._entity_type_superclass_map, rdf_type['id'])
                     except KeyError:
-                        self._logger.debug(f'Found no supertypes for type {rdf_type["label"]} ({rdf_type["id"]})')
+                        self._logger.info(f'Found no supertypes for [{rdf_type["label"]}] ({rdf_type["id"]})')
                         continue
 
                     # and add the candidate if one of its supertypes matches the (predicted) type of the mention
                     if mention['type'] in supertypes:
                         candidate_has_correct_type = True
                         mention['filtered_candidates'].append(candidate)
-                        self._logger.debug(f'Added candidate "{candidate["item_id"]}" with correct type {mention["type"]}')
+                        self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct type: {types.get_type_label(mention["type"])}')
                         break
 
                 # otherwise don't add it
                 if not candidate_has_correct_type:
                     rdf_types_list_string = ', '.join([rdf_type['label'] for rdf_type in candidate['rdf_types']])
-                    self._logger.debug(f'Removed candidate "{candidate["item_id"]}" with wrong types: {rdf_types_list_string}' )
+                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong types: {rdf_types_list_string}' )
 
             mention['unfiltered_candidates'] = mention['candidates']
             mention['candidates'] = mention['filtered_candidates']

@@ -7,7 +7,7 @@ from config import Config
 from inout.wikidata import Wikidata
 
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 _wikidata = Wikidata(Config.dirs['type_cache'], Config.dirs['subclass_cache'])
 
 

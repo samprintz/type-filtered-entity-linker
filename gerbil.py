@@ -5,6 +5,7 @@ import os
 import pprint
 import sys
 
+from config import ELConfig
 from el.model import ELModel
 from el.entity_linker import EntityLinker
 from inout import nif
@@ -12,48 +13,29 @@ from inout import nif
 app = Flask(__name__)
 
 
-# TODO The code below is copied from run.py Merge/reuse code?
-
-dirs = {
-    'logging' : os.path.join(os.getcwd(), 'log'),
-    'models' : os.path.join(os.getcwd(), 'data', 'models'),
-    'type_cache' : os.path.join(os.getcwd(), 'data', 'type_cache')
+# Entity linking settings
+settings = {
+    'ed_model_type' : 'bert_pbg',
+    'ed_model_name' : 'model-20210529-1',
+    'ed_model_checkpoint_epoch' : 60,
+    'ed_model_checkpoint_type' : 'model', # model/weights
+    'filter' : 'bert', # spacy/bert/none
+    'filter_model_name' : 'model-20210625-1',
+    'filter_model_checkpoint_epoch' : 5,
+    'filter_entities_without_type' : False,
+    'candidates_limit' : 100
     }
 
-for path in dirs.values():
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-# Model settings
-model_type = 'bert_pbg'
-model_name = 'model-20210529-1'
-model_checkpoint_epoch = 60
-model_checkpoint_type = 'model'
+# Create config
+config = ELConfig(settings, log_suffix='gerbil')
 
 # Logging settings
-log_level = logging.INFO
-log_filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-log_path = os.path.join(dirs['logging'], f'{log_filename}.log')
-log_format = "%(asctime)s: %(levelname)-1.1s %(name)s:%(lineno)d] %(message)s"
-
+logging.basicConfig(level=config.log_level, format=config.log_format,
+        handlers=[logging.FileHandler(config.log_path), logging.StreamHandler()])
 logger = logging.getLogger()
-logging.basicConfig(level=log_level, format=log_format,
-        handlers=[logging.FileHandler(log_path), logging.StreamHandler()])
-
-# Entity linking settings
-config = {
-    'model_path' : os.path.join(dirs['models'], model_type, model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
-    'model_checkpoint_type' : model_checkpoint_type,
-    'type_cache_dir' : dirs['type_cache'],
-    'filter_model_path' : os.path.join(dirs['models'], 'typerec', model_name, f'cp-{model_checkpoint_epoch:04d}.ckpt'),
-    'candidates_limit' : 100,
-    'use_filter' : True
-    }
 
 # Initialize linker
 linker = EntityLinker(config)
-
-# TODO The code above is copied from run.py Merge/reuse code?
 
 
 @app.route('/', methods=['get', 'post'])

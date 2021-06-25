@@ -40,7 +40,7 @@ class EntityLinker:
     """
     def d2kb(self, doc_with_mentions):
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
-        if self.filter:
+        if self._config.filter:
             doc_with_candidates = self.filter_candidates(doc_with_candidates)
         doc_with_entities = self.disambiguate_entities(doc_with_candidates)
         return doc_with_candidates, doc_with_entities
@@ -65,9 +65,10 @@ class EntityLinker:
 
     def filter_candidates(self, doc):
         self.__print_step_heading('Type Filter')
-        #self._filter = NERTypeFilter()
-        self._filter = BERTTypeFilter(self._config, self._config.filter_model_path)
-        self._filter.process(doc)
+        if self._candidate_filter is None:
+            #self._candidate_filter = NERTypeFilter()
+            self._candidate_filter = BERTTypeFilter(self._config, self._config.filter_model_path)
+        self._candidate_filter.process(doc)
         return doc
 
 

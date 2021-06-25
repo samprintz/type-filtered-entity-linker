@@ -68,6 +68,7 @@ class ELConfig(Config):
             self.filter_model_checkpoint_epoch = settings['filter_model_checkpoint_epoch']
             self.filter_model_path = utils.get_model_path(self.dirs['models'], 'typerec',
                     self.filter_model_name, self.filter_model_checkpoint_epoch)
+            self.filter_entities_without_type = settings['filter_entities_without_type']
         else:
             self.filter = False
 
