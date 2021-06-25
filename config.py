@@ -75,3 +75,14 @@ class ELConfig(Config):
         self.candidates_limit = settings['candidates_limit']
 
         super(ELConfig, self).__init__()
+
+
+
+class TypeRecDatasetConfig(Config):
+
+    def __init__(self, settings):
+        self.dataset_train = settings['dataset_train']
+        self.dataset_part = settings['dataset_part']
+        self.detailed_types = settings['detailed_types']
+
+        super(TypeRecDatasetConfig, self).__init__()

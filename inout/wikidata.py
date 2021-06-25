@@ -265,7 +265,7 @@ class Wikidata:
     def __get_subclasses_from_sparql_endpoint(self, item_id):
         subclasses = []
 
-        self._logger.info(f'Requesting subclasses of for item {item_id} from Wikidata SPARQL endpoint...')
+        self._logger.info(f'Requesting subclasses of {item_id} from Wikidata SPARQL endpoint...')
 
         query = self._query_get_subclasses % self.__translate_to_wikidata_entity(item_id)
         data = self.__send_request(item_id, query)

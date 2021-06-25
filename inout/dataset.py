@@ -28,11 +28,11 @@ def get_wikidata_disamb_dataset(dataset_dir, train, part):
     return json_data
 
 
-def get_wikidata_typerec_positives_dataset(dataset_dir, train, part):
+def get_wikidata_typerec_detailed_dataset(dataset_dir, train, part):
     """
-    Read Wikidata-TypeRec positives dataset.
+    Read Wikidata-TypeRec-detailed dataset.
     """
-    dataset_filename = f'wikidata-typerec-positives-{train}.{part}.json'
+    dataset_filename = f'wikidata-typerec-detailed-{train}.{part}.json'
     _logger.info(f'Reading {train} data ({part})...')
     dataset_path = os.path.join(dataset_dir, dataset_filename)
     with open(dataset_path, encoding='utf8') as f:
@@ -41,11 +41,11 @@ def get_wikidata_typerec_positives_dataset(dataset_dir, train, part):
     return json_data
 
 
-def write_wikidata_typerec_positives_dataset(dataset_dir, dataset, train, part):
+def write_wikidata_typerec_detailed_dataset(dataset_dir, dataset, train, part):
     """
-    Write Wikidata-TypeRec positives dataset to JSON file.
+    Write Wikidata-TypeRec-detailed dataset to JSON file.
     """
-    dataset_filename = f'wikidata-typerec-positives-{train}.{part}.json'
+    dataset_filename = f'wikidata-typerec-detailed-{train}.{part}.json'
     _logger.info(f'Writing {len(dataset)} lines {dataset_filename}')
     dataset_path = os.path.join(dataset_dir, dataset_filename)
     with open(dataset_path, 'w') as f:

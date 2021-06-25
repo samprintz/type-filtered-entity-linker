@@ -11,6 +11,9 @@ _logger = logging.getLogger()
 _wikidata = Wikidata(Config.dirs['type_cache'], Config.dirs['subclass_cache'])
 
 
+# Default supertype for all types that don't match any of the supertypes in the dict above
+default_supertype = 'OTHER'
+
 # List of high-level entity types
 type_list = [
         'http://www.wikidata.org/entity/Q215627', # person
@@ -38,12 +41,13 @@ type_dict = {
         'http://www.wikidata.org/entity/Q618123' : 'geographical feature',
         'http://www.wikidata.org/entity/Q43229' : 'organization',
         'http://www.wikidata.org/entity/Q811979' : 'architectural structure',
-        #'http://www.wikidata.org/entity/Q7187' : 'gene',
-        #'http://www.wikidata.org/entity/Q11173' : 'chemical compound',
+        #'http://www.wikidata.org/entity/Q7187' : 'gene', # 1,004,657 subclasses
+        #'http://www.wikidata.org/entity/Q11173' : 'chemical compound', # 877,579 subclasses
         #'http://www.wikidata.org/entity/Q6999' : 'astronomical object',
         'http://www.wikidata.org/entity/Q16521' : 'taxon',
         'http://www.wikidata.org/entity/Q1656682' : 'event',
-        'http://www.wikidata.org/entity/Q83620' : 'thoroughfare'
+        'http://www.wikidata.org/entity/Q83620' : 'thoroughfare',
+        default_supertype : default_supertype
 }
 
 # Initialize one-hot encoder for entity types
@@ -53,10 +57,26 @@ one_hot_encoder.fit(types_array)
 #print(one_hot_encoder.categories_)
 
 
+def get_type_label(type_url):
+    """
+    Return the label of a type.
+    """
+    return type_dict[type_url]
+
+
+def get_type_id(type_url):
+    """
+    Return the ID of a type.
+    """
+    # TODO
+    return type_url
+
+
 def get_type_superclass(type_superclass_map, type_url):
     """
     Return all high-level entity types that match with the given entity type.
     """
+    # TODO: Dispense the first argument (by creating a Types object?)
     return type_superclass_map[type_url]
 
 
