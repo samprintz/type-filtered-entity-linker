@@ -1,6 +1,6 @@
 from inout import dataset
 import preprocess
-from el.model import ELModel
+from disamb.model import EDModel
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
             use_cache=True)
     train_data = preprocess.reshape_dataset(train_data_pre)
 
-    model = ELModel()
+    model = EDModel()
     model.train(train_data,
         epochs=2,
         batch_size=32)

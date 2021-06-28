@@ -1,7 +1,7 @@
 import logging
 
 from preprocess import Preprocessor
-from el.model import ELModel
+from disamb.model import EDModel
 
 class EntityDisambiguator:
 
@@ -9,7 +9,7 @@ class EntityDisambiguator:
         self._logger = logging.getLogger(__name__)
         self._preprocessor = Preprocessor()
         # TODO load model just right before predict(), s.t. it's not loaded e.g. if there are no candidates
-        self._model = ELModel()
+        self._model = EDModel()
         self._model.load(model_path, model_checkpoint_type)
 
     def process(self, doc):

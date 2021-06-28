@@ -1,6 +1,10 @@
+import os
+import logging
+
+from disamb.model import EDModel
 from inout import dataset
 import preprocess
-from el.model import ELModel
+import utils
 
 
 dirs = {
@@ -47,10 +51,10 @@ def main():
     data = preprocessor.reshape_dataset(data_pre)
 
     # Initialize the model and train it
-    model = PGBModel()
+    ed_model = EDModel()
     # TODO Log configuration of the model
-    model.train(data,
-        save_path=config['save_path']
+    ed_model.train(data,
+        save_path=config['save_path'],
         epochs=config['epochs'],
         batch_size=config['batch_size'])
 

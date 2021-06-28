@@ -5,7 +5,7 @@ from tqdm import tqdm
 from config import TypeRecDatasetConfig
 from inout import dataset
 from inout.wikidata import Wikidata
-from typerec import types
+from models.typerec import types
 
 
 # Model and training settings

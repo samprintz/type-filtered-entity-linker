@@ -6,7 +6,6 @@ import pprint
 import sys
 
 from config import ELConfig
-from el.model import ELModel
 from el.entity_linker import EntityLinker
 from inout import nif
 import utils

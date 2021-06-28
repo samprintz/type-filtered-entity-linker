@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Input, Dense, GRU, LSTM, Bidirectional, Acti
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification, DistilBertConfig, TFDistilBertModel
 
 
-class ELModel:
+class EDModel:
     _max_text_length = 512
     _item_pbg_vocab_size = 200
     _item_glove_vocab_size = 300 * 3
