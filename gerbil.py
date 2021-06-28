@@ -9,6 +9,7 @@ from config import ELConfig
 from el.model import ELModel
 from el.entity_linker import EntityLinker
 from inout import nif
+import utils
 
 app = Flask(__name__)
 
@@ -20,8 +21,8 @@ settings = {
     'ed_model_checkpoint_epoch' : 60,
     'ed_model_checkpoint_type' : 'model', # model/weights
     'filter' : 'bert', # spacy/bert/none
-    'filter_model_name' : 'model-20210625-1',
-    'filter_model_checkpoint_epoch' : 5,
+    'filter_model_name' : 'model-20210625-2',
+    'filter_model_checkpoint_epoch' : 20,
     'filter_entities_without_type' : False,
     'candidates_limit' : 100
     }
@@ -87,8 +88,12 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'd2kb':
             app.config['experiment_type'] = 'd2kb'
-            logger.info(f'Run as D2KB')
+            settings['experiment_type'] = 'd2kb'
         else:
             logger.warn(f'Unknown command line argument "{sys.argv[1]}"')
+            settings['experiment_type'] = 'a2kb'
+    else:
+        settings['experiment_type'] = 'a2kb'
+    utils.log_experiment_settings(settings=settings, mode="PRODUCTION")
     app.wsgi_app = LoggingMiddleware(app.wsgi_app)
     app.run()

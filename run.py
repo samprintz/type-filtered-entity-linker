@@ -5,9 +5,9 @@ import sys
 
 from config import ELConfig
 from inout import dataset
-from el.model import ELModel
 from el.entity_linker import EntityLinker
 import preprocess
+import utils
 
 
 def main():
@@ -26,8 +26,8 @@ def main():
         'ed_model_checkpoint_epoch' : 60,
         'ed_model_checkpoint_type' : 'model', # model/weights
         'filter' : 'bert', # spacy/bert/none
-        'filter_model_name' : 'model-20210625-1',
-        'filter_model_checkpoint_epoch' : 5,
+        'filter_model_name' : 'model-20210625-2',
+        'filter_model_checkpoint_epoch' : 20,
         'filter_entities_without_type' : False,
         'candidates_limit' : 100
         }
@@ -41,6 +41,7 @@ def main():
     logger = logging.getLogger()
 
     # Initialize linker and do the entity linking
+    utils.log_experiment_settings(settings=settings, mode="TEST RUN")
     linker = EntityLinker(config)
     doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
     logger.info("Done")

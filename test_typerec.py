@@ -13,10 +13,10 @@ import utils
 def main():
     # Model and training settings
     settings = {
-        'dataset_partial' : 'small', # small/medium/full
+        'dataset_partial' : 'full', # small/medium/full
         'model_type' : 'typerec',
         'model_name' : 'model-20210625-2',
-        'epochs' : 5,
+        'epochs' : 20,
         'batch_size' : 1,
         'dropout_bert' : 0.2,
         'dropout_bert_attention' : 0.2
@@ -46,7 +46,7 @@ def main():
     config.types_count = types.get_types_count()
 
     # Initialize the model and test it
-    utils.log_experiment_settings(settings=settings, is_test=True)
+    utils.log_experiment_settings(settings=settings, mode='TEST')
     model = TypeRecModel(config)
     model.test(dataset_test,
         saving_dir=config.model_saving_dir,

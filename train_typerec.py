@@ -49,7 +49,7 @@ def main():
     config.types_count = types.get_types_count()
 
     # Initialize the model and train it
-    utils.log_experiment_settings(settings=settings, is_test=False)
+    utils.log_experiment_settings(settings=settings, mode='TRAIN')
     model = TypeRecModel(config)
     model.train(dataset_train, dataset_dev,
         saving_dir=config.model_saving_dir,
