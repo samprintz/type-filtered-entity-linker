@@ -38,47 +38,55 @@ class BERTTypeFilter:
             self._logger.info(f'Predicting type of mention "{mention["sf"]}"...')
             entity_type = self._model.predict(sample)
             mention['type'] = entity_type
-            self._logger.debug(f'Predict type [{types.get_type_label(mention["type"])}] ({mention["type"]}) for {mention["sf"]}')
+            self._logger.info(f'Predict type [{types.get_type_label(mention["type"])}] ({mention["type"]}) for {mention["sf"]}')
+
+            # If type <OTHER> was predicted for the mention, just add all candidates
+            if mention['type'] == types.default_supertype and not self._config.filter_default_type:
+                mention['filtered_candidates'] = mention['candidates']
+                self._logger.info(f'Add all candidates (predicted default type "{types.default_supertype}")')
+                self._logger.info(f'To change this behavior, set settings.filter_default_type = True)')
 
             # Filter candidate entities
-            mention['filtered_candidates'] = []
-            for candidate in mention['candidates']:
+            else:
+                mention['filtered_candidates'] = []
+                for candidate in mention['candidates']:
 
-                # Get types of the candidate entity
-                candidate['rdf_types'] = self._wikidata.get_types_of_item(candidate['item_id'])
+                    # Get types of the candidate entity
+                    candidate['rdf_types'] = self._wikidata.get_types_of_item(candidate['item_id'])
 
-                # If the candidate entity has no type on Wikidata
-                if not candidate["rdf_types"]: # empty
-                    if self._config.filter_entities_without_type:
-                        self._logger.info(f'Removed candidate "{candidate["item_id"]}" having no type')
-                        continue
-                    else:
-                        candidate_has_correct_type = True
-                        mention['filtered_candidates'].append(candidate)
-                        self._logger.info(f'Added candidate "{candidate["item_id"]}" WITHOUT any type (set settings.filter_entities_without_type=False if unwanted)')
+                    # If the candidate entity has no type on Wikidata
+                    if not candidate["rdf_types"]: # empty
+                        if self._config.filter_entities_without_type:
+                            self._logger.info(f'Removed candidate "{candidate["item_id"]}" having no type')
+                            continue
+                        else:
+                            candidate_has_correct_type = True
+                            mention['filtered_candidates'].append(candidate)
+                            self._logger.info(f'Added candidate "{candidate["item_id"]}" WITHOUT any type')
+                            self._logger.info(f'To change this behavior, set settings.filter_entities_without_type = False)')
 
-                # For each type of the candidate entity
-                candidate_has_correct_type = False
-                for rdf_type in candidate['rdf_types']:
+                    # For each type of the candidate entity
+                    candidate_has_correct_type = False
+                    for rdf_type in candidate['rdf_types']:
 
-                    # get its supertypes
-                    try:
-                        supertypes = types.get_type_superclass(self._entity_type_superclass_map, rdf_type['id'])
-                    except KeyError:
-                        self._logger.info(f'Found no supertypes for [{rdf_type["label"]}] ({rdf_type["id"]})')
-                        continue
+                        # get its supertypes
+                        try:
+                            supertypes = types.get_type_superclass(self._entity_type_superclass_map, rdf_type['id'])
+                        except KeyError:
+                            self._logger.info(f'Found no supertypes for [{rdf_type["label"]}] ({rdf_type["id"]})')
+                            continue
 
-                    # and add the candidate if one of its supertypes matches the (predicted) type of the mention
-                    if mention['type'] in supertypes:
-                        candidate_has_correct_type = True
-                        mention['filtered_candidates'].append(candidate)
-                        self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct type: {types.get_type_label(mention["type"])}')
-                        break
+                        # and add the candidate if one of its supertypes matches the (predicted) type of the mention
+                        if mention['type'] in supertypes:
+                            candidate_has_correct_type = True
+                            mention['filtered_candidates'].append(candidate)
+                            self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct type: {types.get_type_label(mention["type"])}')
+                            break
 
-                # otherwise don't add it
-                if not candidate_has_correct_type:
-                    rdf_types_list_string = ', '.join([rdf_type['label'] for rdf_type in candidate['rdf_types']])
-                    self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong types: {rdf_types_list_string}' )
+                    # otherwise don't add it
+                    if not candidate_has_correct_type:
+                        rdf_types_list_string = ', '.join([rdf_type['label'] for rdf_type in candidate['rdf_types']])
+                        self._logger.info(f'Removed candidate "{candidate["item_id"]}" with wrong types: {rdf_types_list_string}' )
 
             mention['unfiltered_candidates'] = mention['candidates']
             mention['candidates'] = mention['filtered_candidates']
@@ -87,7 +95,7 @@ class BERTTypeFilter:
             count_filtered = len(mention["filtered_candidates"])
             count_removed = count_unfiltered - count_filtered
 
-            self._logger.info(f'Filtered to {count_filtered} candidates for mention "{mention["sf"]}" (removed {count_removed}/{count_unfiltered})')
+            self._logger.info(f'Filtered to {count_filtered}/{count_unfiltered} candidates for mention "{mention["sf"]}" (removed {count_removed})')
 
         return doc
 

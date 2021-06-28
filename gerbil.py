@@ -23,6 +23,7 @@ settings = {
     'filter_model_name' : 'model-20210625-2',
     'filter_model_checkpoint_epoch' : 20,
     'filter_entities_without_type' : False,
+    'filter_default_type' : False,
     'candidates_limit' : 100
     }
 

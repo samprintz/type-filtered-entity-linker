@@ -15,9 +15,11 @@ def main():
         text = sys.argv[1]
     except:
         #text = "Napoleon was the first emperor of the French empire."
-        text = "private university in Nanjing, China which was founded in 1888 and sponsored by American churches. It's originally named the Nanking University, the first school officially named University."
+        #text = "private university in Nanjing, China which was founded in 1888 and sponsored by American churches. It's originally named the Nanking University, the first school officially named University."
+        text = "Prokhorov said the visit would serve as a cornerstone for future interaction between players and coaches from the Nets and young Russians, with the aim of developing basketball in Russia, where the sport is a distant third in popularity behind soccer and hockey."
 
     doc = {'text' : text}
+    doc['mentions'] = [{'start' : 227, 'end' : 236, 'sf' : 'popularity'}]
 
     # Entity linking settings
     settings = {
@@ -29,6 +31,7 @@ def main():
         'filter_model_name' : 'model-20210625-2',
         'filter_model_checkpoint_epoch' : 20,
         'filter_entities_without_type' : False,
+        'filter_default_type' : False,
         'candidates_limit' : 100
         }
 
@@ -43,7 +46,8 @@ def main():
     # Initialize linker and do the entity linking
     utils.log_experiment_settings(settings=settings, mode="TEST RUN")
     linker = EntityLinker(config)
-    doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
+    #doc_with_mentions, doc_with_candidates, doc_with_entities = linker.process(doc)
+    doc_with_candidates, doc_with_entities = linker.d2kb(doc)
     logger.info("Done")
 
 
