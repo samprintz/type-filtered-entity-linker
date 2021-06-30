@@ -244,7 +244,11 @@ class Preprocessor:
                 add_special_tokens=True,
                 max_length=self._max_text_length,
                 padding='max_length', # TODO padding here or in model (together with item_glove)?
+                truncation=True, # truncate to 512 (added for MSNBC dataset)
                 return_attention_mask=True)
+        # TODO warn if text was truncated
+        #if len(TODO) > self._max_text_length:
+        #    self._logger.info(f'Truncate long input sentence ({len(TODO)} tokens) to {self._max_text_length}')
         sample['text_tokenized'] = inputs['input_ids']
         sample['text_attention_mask'] = inputs['attention_mask']
         # Item name (mention/surface form)
@@ -277,7 +281,11 @@ class Preprocessor:
                 add_special_tokens=True,
                 max_length=self._max_text_length,
                 padding='max_length', # TODO padding here or in model (together with item_glove)?
+                truncation=True, # truncate to 512 (added for MSNBC dataset)
                 return_attention_mask=True)
+        # TODO warn if text was truncated
+        #if len(TODO) > self._max_text_length:
+        #    self._logger.info(f'Truncate long input sentence ({len(TODO)} tokens) to {self._max_text_length}')
         sample['text_and_mention_tokenized'] = inputs['input_ids']
         sample['text_and_mention_attention_mask'] = inputs['attention_mask']
 

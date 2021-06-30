@@ -50,6 +50,7 @@ class EntityDisambiguator:
             if len(candidates) == 0:
                 # take the first candidate
                 entity = mention['candidates'][0]
+                entity['score'] = 0.0 # default score
                 self._logger.info(f'Not a single candidate had a PyTorch-BigGraph embedding. Could not calculate any matching score. Disambiguate by choosing first candidate:')
                 self._logger.info(f'First as best candidate for "{mention["sf"]}": {entity["item_id"]}')
 
