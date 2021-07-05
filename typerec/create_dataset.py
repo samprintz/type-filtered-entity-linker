@@ -5,13 +5,13 @@ from tqdm import tqdm
 from config import TypeRecDatasetConfig
 from inout import dataset
 from inout.wikidata import Wikidata
-from models.typerec import types
+from typerec import types
 
 
 # Model and training settings
 settings = {
-    'dataset_train' : 'dev', # train/test/dev
-    'dataset_part' : 'small', # small/medium/full
+    'dataset_train' : 'train', # train/test/dev
+    'dataset_part' : 'full', # small/medium/full
     'detailed_types' : False # True/False
     }
 
@@ -141,12 +141,42 @@ def add_entity_types(sample):
     return sample
 
 
+def analyze_type_frequency(data):
+    """
+    Analyze the types in the Wikidata-TypeRec dataset.
+    """
+    _logger.info(f'Analyze the types in Wikidata-TypeRec ' \
+            f'dataset ({len(data)} lines)...')
+
+    # Create dictionary to count types
+    item_type_counts = {}
+
+    # Counter to count the average types per item
+    item_types_counter = 0
+
+    for line in tqdm(data):
+        item_types = line['item_types_detailed']
+        # Increase counter for each type of the item in this data row
+        for item_type in item_types:
+            item_types_counter += 1
+            if item_type['id'] in item_type_counts:
+                item_type_counts[item_type['id']] += 1
+            else:
+                item_type_counts[item_type['id']] = 1
+
+    avg_types_per_item = item_types_counter / len(data)
+
+    _logger.info('')
+    _logger.info('=== Statistics ===')
+    _logger.info(f'Number of different (low-level) types: {len(item_type_counts)}')
+    _logger.info(f'Average number (low-level) types per item: {avg_types_per_item}')
+
+
 def analyze_supertype_frequency(data):
     """
-    Analyze the frequency of high-level types in the Wikidata-TypeRec-detailed
-    dataset.
+    Analyze the frequency of high-level types in the Wikidata-TypeRec dataset.
     """
-    _logger.info(f'Count frequency of types in Wikidata-TypeRec-detailed ' \
+    _logger.info(f'Count frequency of types in Wikidata-TypeRec ' \
             f'dataset ({len(data)} lines)...')
 
     # Create dictionary to count high-level types (each initialized with 0)
@@ -169,13 +199,15 @@ def analyze_supertype_frequency(data):
     return item_type_counts
 
 
-def analyze_supertype_probability_distribution(data):
+def analyze_supertype_probability_distribution(dataset_train, dataset_part,
+            data):
     """
     Analyze the probability distribution of high-level types in Wikidata-
-    TypeRec-Positives dataset.
+    TypeRec dataset.
     """
     _logger.info(f'Analyze probability distribution of types in Wikidata-' \
-            f'TypeRec-Positives dataset ({len(data)} lines)...')
+            f'TypeRec dataset ({dataset_train}, {dataset_part}, ' \
+            f'{len(data)} lines)...')
 
     # Analyze the type frequencies
     item_type_counts = analyze_supertype_frequency(data)
@@ -193,7 +225,7 @@ def analyze_supertype_probability_distribution(data):
         item_type_probability[item_type] = probability
         ljust_type_label = types.get_type_label(item_type).ljust(
                 max_label_length + 1, " ")
-        _logger.info(f'{ljust_type_label}: {probability}')
+        _logger.info(f'{ljust_type_label}: {probability:.2} ({probability})')
 
     return item_type_probability
 
@@ -214,7 +246,7 @@ def main():
 
     # Generate all datasets for all sizes
     for dataset_train in ['train', 'test', 'dev']:
-        for dataset_part in ['small', 'medium', 'full']:
+        for dataset_part in ['full']: # ['small', 'medium', 'full']:
 
             # Load data
             data_raw = dataset.get_wikidata_disamb_dataset(
@@ -224,7 +256,9 @@ def main():
             typerec_dataset = create_typerec_dataset(data_raw)
 
             # Analyze data
-            analyze_supertype_probability_distribution(typerec_dataset)
+            analyze_type_frequency(typerec_dataset)
+            analyze_supertype_probability_distribution(dataset_train,
+                    dataset_part, typerec_dataset)
 
             # Remove attributes
             typerec_dataset = remove_attribute(typerec_dataset, 'item_types')
