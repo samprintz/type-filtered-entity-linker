@@ -188,24 +188,27 @@ class TypeRecModel:
             # Get integer label encoding from softmax probability distribution (predicted value)
             pred_labels = np.argmax(entity_types, axis=1)
 
-            # Get metrics
-            average = 'macro' # None: return scores for each class; others: micro, macro, weighted
-            labels = list(range(self._config.types_count)) # [0,1,2,3,...,9,10]
-            zero_division = 1 # return 1 when there is a zero division
-            precision = precision_score(true_labels, pred_labels,
-                    average=average, labels=labels, zero_division=zero_division)
-            recall = recall_score(true_labels, pred_labels,
-                    average=average, labels=labels, zero_division=zero_division)
-            f1 = f1_score(true_labels, pred_labels,
-                    average=average, labels=labels, zero_division=zero_division)
-
+            # Print metrics
             self._logger.info(f'evaluate():')
             self._logger.info(f'- Loss: {results[0]}')
             self._logger.info(f'- Categorical accuracy: {results[1]}')
-            self._logger.info(f'predict():')
-            self._logger.info(f'- Precision: {precision}')
-            self._logger.info(f'- Recall:    {recall}')
-            self._logger.info(f'- F1:        {f1}')
+
+            for average in ['micro', 'macro']:
+                #average = 'macro' # None: return scores for each class; others: micro, macro, weighted
+                labels = list(range(self._config.types_count)) # [0,1,2,3,...,9,10]
+                zero_division = 1 # return 1 when there is a zero division
+                precision = precision_score(true_labels, pred_labels,
+                        average=average, labels=labels, zero_division=zero_division)
+                recall = recall_score(true_labels, pred_labels,
+                        average=average, labels=labels, zero_division=zero_division)
+                # TODO seems to be wrong, at least not the harmonic mean of prec and recall
+                f1 = f1_score(true_labels, pred_labels,
+                        average=average, labels=labels, zero_division=zero_division)
+
+                self._logger.info(f'predict() [{average}]:')
+                self._logger.info(f'- Precision: {precision}')
+                self._logger.info(f'- Recall:    {recall}')
+                self._logger.info(f'- F1:        {f1}')
 
             ## Save metrics of the epochs
             precision_list[epoch] = precision
