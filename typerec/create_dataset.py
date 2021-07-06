@@ -154,6 +154,9 @@ def analyze_type_frequency(data):
     # Counter to count the average types per item
     item_types_counter = 0
 
+    # How many items accidentially have aone of the supertypes directly as type
+    items_with_supertype = 0
+
     for line in tqdm(data):
         item_types = line['item_types_detailed']
         # Increase counter for each type of the item in this data row
@@ -163,13 +166,17 @@ def analyze_type_frequency(data):
                 item_type_counts[item_type['id']] += 1
             else:
                 item_type_counts[item_type['id']] = 1
+            if item_type['id'] in types.type_dict.keys():
+                items_with_supertype += 1
 
     avg_types_per_item = item_types_counter / len(data)
+    percentage_items_with_supertype = items_with_supertype / len(data)
 
     _logger.info('')
     _logger.info('=== Statistics ===')
     _logger.info(f'Number of different (low-level) types: {len(item_type_counts)}')
     _logger.info(f'Average number (low-level) types per item: {avg_types_per_item}')
+    _logger.info(f'Items that accidentially have a supertype directly as type: {items_with_supertype} ({percentage_items_with_supertype})')
 
 
 def analyze_supertype_frequency(data):
@@ -245,7 +252,7 @@ def main():
     #dataset_part = _config.dataset_part
 
     # Generate all datasets for all sizes
-    for dataset_train in ['train', 'test', 'dev']:
+    for dataset_train in ['all']: # ['train', 'test', 'dev']:
         for dataset_part in ['full']: # ['small', 'medium', 'full']:
 
             # Load data
