@@ -24,7 +24,7 @@ settings = {
     'filter_model_checkpoint_epoch' : 18,
     'filter_entities_without_type' : False,
     'filter_default_type' : False,
-    'candidates_limit' : 100
+    'candidates_limit' : 500
     }
 
 # Create config

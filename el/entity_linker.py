@@ -23,8 +23,12 @@ class EntityLinker:
     def process(self, doc):
         doc_with_mentions = self.detect_mentions(doc)
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        # Apply type-filter
         if self._config.filter:
             doc_with_candidates = self.filter_candidates(doc_with_candidates)
+        # Limit candidates
+        if self._config.candidates_limit:
+            doc_with_candidates = self.limit_candidates(doc_with_candidates)
         doc_with_entities = self.disambiguate_entities(doc_with_candidates)
         return doc_with_mentions, doc_with_candidates, doc_with_entities
 
@@ -50,8 +54,12 @@ class EntityLinker:
         self._logger.info(f'Document length: {len(spacy_doc_no_punctuation)}')
 
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
+        # Apply type-filter
         if self._config.filter:
             doc_with_candidates = self.filter_candidates(doc_with_candidates)
+        # Limit candidates
+        if self._config.candidates_limit:
+            doc_with_candidates = self.limit_candidates(doc_with_candidates)
         doc_with_entities = self.disambiguate_entities(doc_with_candidates)
         return doc_with_candidates, doc_with_entities
 
@@ -67,8 +75,7 @@ class EntityLinker:
     def generate_candidates(self, doc):
         self.__print_step_heading('Candidate Generation')
         if self._candidate_generator is None:
-            self._candidate_generator = WikidataSparqlCandidateGenerator(
-                    self._config.candidates_limit)
+            self._candidate_generator = WikidataSparqlCandidateGenerator()
         self._candidate_generator.process(doc)
         return doc
 
@@ -82,6 +89,22 @@ class EntityLinker:
                 self._candidate_filter = BERTTypeFilter(self._config, self._config.filter_model_path)
         self._candidate_filter.process(doc)
         return doc
+
+
+    def limit_candidates(self, doc):
+        self.__print_step_heading('Limit Candidates')
+        limit = self._config.candidates_limit
+        limit_applied = False
+        for mention in doc['mentions']:
+            if len(mention['candidates']) > limit:
+                self._logger.info(f'Limit candidates from ' \
+                        f'{len(mention["candidates"])} to {limit} for ' \
+                        f'"{mention["sf"]}"')
+                limit_applied = True
+                mention['candidates'] = mention['candidates'][:limit]
+        if not limit_applied:
+            self._logger.info(f'The size of all candidate entity sets is ' \
+                    f'smaller than the limit ({limit})')
 
 
     def disambiguate_entities(self, doc):
