@@ -17,11 +17,11 @@ app = Flask(__name__)
 settings = {
     'ed_model_type' : 'bert_pbg',
     'ed_model_name' : 'model-20210529-1',
-    'ed_model_checkpoint_epoch' : 60,
+    'ed_model_checkpoint_epoch' : 15,
     'ed_model_checkpoint_type' : 'model', # model/weights
-    'filter' : 'bert', # spacy/bert/none
+    'filter' : 'none', # spacy/bert/none
     'filter_model_name' : 'model-20210625-2',
-    'filter_model_checkpoint_epoch' : 20,
+    'filter_model_checkpoint_epoch' : 18,
     'filter_entities_without_type' : False,
     'filter_default_type' : False,
     'candidates_limit' : 100

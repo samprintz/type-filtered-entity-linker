@@ -62,12 +62,16 @@ class ELConfig(Config):
                 self.ed_model_name, self.ed_model_checkpoint_epoch)
 
         # Settings for type filter model
-        if settings['filter'] is 'bert':
+        if settings['filter'] == 'bert':
             self.filter = settings['filter']
             self.filter_model_name = settings['filter_model_name']
             self.filter_model_checkpoint_epoch = settings['filter_model_checkpoint_epoch']
             self.filter_model_path = utils.get_model_path(self.dirs['models'], 'typerec',
                     self.filter_model_name, self.filter_model_checkpoint_epoch)
+            self.filter_entities_without_type = settings['filter_entities_without_type']
+            self.filter_default_type = settings['filter_default_type']
+        elif settings['filter'] == 'spacy':
+            self.filter = settings['filter']
             self.filter_entities_without_type = settings['filter_entities_without_type']
             self.filter_default_type = settings['filter_default_type']
         else:

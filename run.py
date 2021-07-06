@@ -19,17 +19,19 @@ def main():
         text = "Prokhorov said the visit would serve as a cornerstone for future interaction between players and coaches from the Nets and young Russians, with the aim of developing basketball in Russia, where the sport is a distant third in popularity behind soccer and hockey."
 
     doc = {'text' : text}
+    #doc['mentions'] = [{'start' : 0, 'end' : 9, 'sf' : 'Prokhorov'}]
+    #doc['mentions'] = [{'start' : 180, 'end' : 186, 'sf' : 'Russia'}]
     doc['mentions'] = [{'start' : 227, 'end' : 236, 'sf' : 'popularity'}]
 
     # Entity linking settings
     settings = {
         'ed_model_type' : 'bert_pbg',
         'ed_model_name' : 'model-20210529-1',
-        'ed_model_checkpoint_epoch' : 60,
+        'ed_model_checkpoint_epoch' : 15,
         'ed_model_checkpoint_type' : 'model', # model/weights
-        'filter' : 'bert', # spacy/bert/none
+        'filter' : 'spacy', # spacy/bert/none
         'filter_model_name' : 'model-20210625-2',
-        'filter_model_checkpoint_epoch' : 20,
+        'filter_model_checkpoint_epoch' : 18,
         'filter_entities_without_type' : False,
         'filter_default_type' : False,
         'candidates_limit' : 100

@@ -1,8 +1,9 @@
 import logging
+import spacy # TODO To analyze the document length; remove again
 
 from el.mention_detector import SpacyMentionDetectorSm, SpacyMentionDetectorTrf
 from el.candidate_generator import WikidataSparqlCandidateGenerator
-from el.filter import NERTypeFilter, BERTTypeFilter
+from el.filter import SpaCyTypeFilter, BERTTypeFilter
 from el.entity_disambiguator import EntityDisambiguator
 
 class EntityLinker:
@@ -14,6 +15,9 @@ class EntityLinker:
         self._candidate_generator = None
         self._candidate_filter = None
         self._entity_disambiguator = None
+
+        # TODO To analyze the document length; remove again
+        self._nlp = spacy.load("en_core_web_sm")
 
 
     def process(self, doc):
@@ -39,6 +43,12 @@ class EntityLinker:
     https://github.com/dice-group/gerbil/wiki/D2KB
     """
     def d2kb(self, doc_with_mentions):
+
+        # TODO To analyze the document length; remove again
+        spacy_doc = self._nlp(doc_with_mentions['text'])
+        spacy_doc_no_punctuation = [n.lemma_ for n in spacy_doc if not n.is_punct]
+        self._logger.info(f'Document length: {len(spacy_doc_no_punctuation)}')
+
         doc_with_candidates = self.generate_candidates(doc_with_mentions)
         if self._config.filter:
             doc_with_candidates = self.filter_candidates(doc_with_candidates)
@@ -66,8 +76,10 @@ class EntityLinker:
     def filter_candidates(self, doc):
         self.__print_step_heading('Type Filter')
         if self._candidate_filter is None:
-            #self._candidate_filter = NERTypeFilter()
-            self._candidate_filter = BERTTypeFilter(self._config, self._config.filter_model_path)
+            if self._config.filter == 'spacy':
+                self._candidate_filter = SpaCyTypeFilter(self._config)
+            elif self._config.filter == 'bert':
+                self._candidate_filter = BERTTypeFilter(self._config, self._config.filter_model_path)
         self._candidate_filter.process(doc)
         return doc
 
