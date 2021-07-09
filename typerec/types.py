@@ -17,7 +17,6 @@ default_supertype = 'OTHER'
 # List of high-level entity types
 type_dict = {
         'http://www.wikidata.org/entity/Q215627' : 'person',
-        'http://www.wikidata.org/entity/Q163875' : 'cardinal', # only 0.013 %
         'http://www.wikidata.org/entity/Q838948' : 'work of art', # use the broader type "creative work" instead
         #'http://www.wikidata.org/entity/Q17537576' : 'creative work', # use the broader type "intellectaual work" instead
         #'http://www.wikidata.org/entity/Q15621286' : 'intellectual work', # use the broader type "work" instead
@@ -37,6 +36,29 @@ type_dict = {
         default_supertype : default_supertype
 }
 
+# Types see https://spacy.io/models/en#en_core_web_sm
+# Wikidata type manually identified
+ner_type_to_wikidata_map = {
+        'CARDINAL': ['http://www.wikidata.org/entity/Q163875'],
+        'DATE': ['http://www.wikidata.org/entity/Q205892'],
+        'EVENT': ['http://www.wikidata.org/entity/Q1656682'],
+        'FAC': ['http://www.wikidata.org/entity/Q13226383'], # facility
+        'GPE': ['http://www.wikidata.org/entity/Q618123'], # http://www.wikidata.org/entity/Q1048835
+        'LANGUAGE': ['http://www.wikidata.org/entity/Q34770'],
+        'LAW': ['http://www.wikidata.org/entity/Q7748'],
+        'LOC': ['http://www.wikidata.org/entity/Q618123'],
+        'MONEY': ['http://www.wikidata.org/entity/Q1368'],
+        'NORP': ['http://www.wikidata.org/entity/Q41710'], # nationalities or religious or political groups
+        'ORDINAL': ['http://www.wikidata.org/entity/Q191780'],
+        'ORG': ['http://www.wikidata.org/entity/Q43229'],
+        'PERCENT': ['http://www.wikidata.org/entity/Q11229'],
+        'PERSON': ['http://www.wikidata.org/entity/Q215627'],
+        'PRODUCT': ['http://www.wikidata.org/entity/Q2424752'],
+        'QUANTITY': ['http://www.wikidata.org/entity/Q309314'],
+        'TIME': ['http://www.wikidata.org/entity/Q11471'],
+        'WORK_OF_ART': ['http://www.wikidata.org/entity/Q838948']
+}
+
 # Initialize one-hot encoder for entity types
 one_hot_encoder = OneHotEncoder(sparse=False)
 types_array = np.array(list(type_dict.keys())).reshape(-1, 1)
@@ -49,6 +71,15 @@ def get_type_label(type_url):
     Return the label of a type.
     """
     return type_dict[type_url]
+
+
+def get_ner_type_label(type_url):
+    """
+    Return the label of a NER type.
+    """
+    for ner_label, type_urls in ner_type_to_wikidata_map.items():
+        if type_url in type_urls:
+            return ner_label
 
 
 def get_type_id(type_url):

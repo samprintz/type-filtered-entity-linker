@@ -108,7 +108,7 @@ class SpaCyTypeFilter:
         self._wikidata = Wikidata(Config.dirs['type_cache'], Config.dirs['subclass_cache'])
         # Create supertype map from NER types
         types_list = []
-        for entity_types in NERTypeFilter._ner_type_to_wikidata_map.values():
+        for entity_types in types.ner_type_to_wikidata_map.values():
             types_list.extend(entity_types)
         self._entity_type_superclass_map = types.get_entity_type_superclass_map(types_list) # subclass -> superclass
 
@@ -140,7 +140,7 @@ class SpaCyTypeFilter:
         """
         Returns the RDF supertype given an NER type.
         """
-        return NERTypeFilter._ner_type_to_wikidata_map[ner_type]
+        return types.ner_type_to_wikidata_map[ner_type]
 
 
     def process(self, doc):
@@ -212,10 +212,11 @@ class SpaCyTypeFilter:
 
                         # and add the candidate if one of its supertypes matches the spaCy type of the mention
                         for mention_type in mention['types']:
+                            import pudb; pu.db
                             if mention_type in supertypes:
                                 candidate_has_correct_type = True
                                 mention['filtered_candidates'].append(candidate)
-                                self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct type: {types.get_type_label(mention_type)}')
+                                self._logger.info(f'Added candidate "{candidate["item_id"]}" with correct type: {types.get_ner_type_label(mention_type)}')
                                 break
 
                     # otherwise don't add it
@@ -237,29 +238,6 @@ class SpaCyTypeFilter:
 
 
 class NERTypeFilter:
-
-    # Types see https://spacy.io/models/en#en_core_web_sm
-    # Wikidata type manually identified
-    _ner_type_to_wikidata_map = {
-            'CARDINAL': ['http://www.wikidata.org/entity/Q163875'],
-            'DATE': ['http://www.wikidata.org/entity/Q205892'],
-            'EVENT': ['http://www.wikidata.org/entity/Q1656682'],
-            'FAC': ['http://www.wikidata.org/entity/Q13226383'], # facility
-            'GPE': ['http://www.wikidata.org/entity/Q618123'], # http://www.wikidata.org/entity/Q1048835
-            'LANGUAGE': ['http://www.wikidata.org/entity/Q34770'],
-            'LAW': ['http://www.wikidata.org/entity/Q7748'],
-            'LOC': ['http://www.wikidata.org/entity/Q618123'],
-            'MONEY': ['http://www.wikidata.org/entity/Q1368'],
-            'NORP': ['http://www.wikidata.org/entity/Q41710'], # nationalities or religious or political groups
-            'ORDINAL': ['http://www.wikidata.org/entity/Q191780'],
-            'ORG': ['http://www.wikidata.org/entity/Q43229'],
-            'PERCENT': ['http://www.wikidata.org/entity/Q11229'],
-            'PERSON': ['http://www.wikidata.org/entity/Q215627'],
-            'PRODUCT': ['http://www.wikidata.org/entity/Q2424752'],
-            'QUANTITY': ['http://www.wikidata.org/entity/Q309314'],
-            'TIME': ['http://www.wikidata.org/entity/Q11471'],
-            'WORK_OF_ART': ['http://www.wikidata.org/entity/Q838948']
-        }
 
     def __init__(self):
         self._logger = logging.getLogger(__name__)
@@ -293,8 +271,8 @@ class NERTypeFilter:
                 else:
                     for rdf_type in candidate['rdf_types']:
                         # Is the RDF type in the dictionary? If so, what is the key (the NER type)?
-                        for ner_type in self._ner_type_to_wikidata_map.keys():
-                            if rdf_type['id'] in self._ner_type_to_wikidata_map[ner_type]:
+                        for ner_type in types.ner_type_to_wikidata_map.keys():
+                            if rdf_type['id'] in types.ner_type_to_wikidata_map[ner_type]:
                                 candidate['ner_type'] = ner_type
                                 break
 
