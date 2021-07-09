@@ -17,19 +17,23 @@ default_supertype = 'OTHER'
 # List of high-level entity types
 type_dict = {
         'http://www.wikidata.org/entity/Q215627' : 'person',
-        'http://www.wikidata.org/entity/Q163875' : 'cardinal',
-        'http://www.wikidata.org/entity/Q838948' : 'work of art',
-        'http://www.wikidata.org/entity/Q13442814' : 'article in scholarly journal',
-        'http://www.wikidata.org/entity/Q571' : 'book',
+        'http://www.wikidata.org/entity/Q163875' : 'cardinal', # only 0.013 %
+        'http://www.wikidata.org/entity/Q838948' : 'work of art', # use the broader type "creative work" instead
+        #'http://www.wikidata.org/entity/Q17537576' : 'creative work', # use the broader type "intellectaual work" instead
+        #'http://www.wikidata.org/entity/Q15621286' : 'intellectual work', # use the broader type "work" instead
+        #'http://www.wikidata.org/entity/Q386724' : 'work',
+        'http://www.wikidata.org/entity/Q13442814' : 'article in scholarly journal', # only 0.025 %
+        'http://www.wikidata.org/entity/Q571' : 'book', # only 0.047 %
         'http://www.wikidata.org/entity/Q618123' : 'geographical feature',
         'http://www.wikidata.org/entity/Q43229' : 'organization',
         'http://www.wikidata.org/entity/Q811979' : 'architectural structure',
         #'http://www.wikidata.org/entity/Q7187' : 'gene', # 1,004,657 subclasses
         #'http://www.wikidata.org/entity/Q11173' : 'chemical compound', # 877,579 subclasses
         #'http://www.wikidata.org/entity/Q6999' : 'astronomical object',
-        'http://www.wikidata.org/entity/Q16521' : 'taxon',
+        'http://www.wikidata.org/entity/Q16521' : 'taxon', # only 0.75 %
         'http://www.wikidata.org/entity/Q1656682' : 'event',
-        'http://www.wikidata.org/entity/Q83620' : 'thoroughfare',
+        #'http://www.wikidata.org/entity/Q2424752' : 'product', # new
+        'http://www.wikidata.org/entity/Q83620' : 'thoroughfare', # only 0.33 %
         default_supertype : default_supertype
 }
 

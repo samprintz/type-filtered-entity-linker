@@ -220,7 +220,8 @@ def analyze_supertype_probability_distribution(dataset_train, dataset_part,
     item_type_counts = analyze_supertype_frequency(data)
 
     # Sum of all types
-    types_total = sum(item_type_counts.values())
+    types_total = sum(item_type_counts.values()) # in case of overlapping types, this increases
+    #types_total = len(data) # number of items (invariant to overlapping types)
 
     # Calculate distribution
     _logger.info('')
@@ -232,7 +233,7 @@ def analyze_supertype_probability_distribution(dataset_train, dataset_part,
         item_type_probability[item_type] = probability
         ljust_type_label = types.get_type_label(item_type).ljust(
                 max_label_length + 1, " ")
-        _logger.info(f'{ljust_type_label}: {probability:.2} ({probability})')
+        _logger.info(f'{ljust_type_label}: {probability}')
 
     return item_type_probability
 
@@ -252,7 +253,8 @@ def main():
     #dataset_part = _config.dataset_part
 
     # Generate all datasets for all sizes
-    for dataset_train in ['all']: # ['train', 'test', 'dev']:
+    for dataset_train in ['all']:
+    #for dataset_train in ['train', 'test', 'dev']:
         for dataset_part in ['full']: # ['small', 'medium', 'full']:
 
             # Load data
