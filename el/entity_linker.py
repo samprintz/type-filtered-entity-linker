@@ -105,6 +105,7 @@ class EntityLinker:
         if not limit_applied:
             self._logger.info(f'The size of all candidate entity sets is ' \
                     f'smaller than the limit ({limit})')
+        return doc
 
 
     def disambiguate_entities(self, doc):
