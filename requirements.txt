@@ -1,4 +1,8 @@
-numpy
-spacy
-pynif
 flask
+numpy
+pynif
+sklearn
+tensorflow
+tqdm
+transformers
+spacy
