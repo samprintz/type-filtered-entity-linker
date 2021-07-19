@@ -193,7 +193,7 @@ class TypeRecModel:
             self._logger.info(f'- Loss: {results[0]}')
             self._logger.info(f'- Categorical accuracy: {results[1]}')
 
-            for average in ['micro', 'macro']:
+            for average in ['micro', 'macro', None]:
                 #average = 'macro' # None: return scores for each class; others: micro, macro, weighted
                 labels = list(range(self._config.types_count)) # [0,1,2,3,...,9,10]
                 zero_division = 1 # return 1 when there is a zero division

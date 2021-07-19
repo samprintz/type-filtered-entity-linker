@@ -17,6 +17,7 @@ default_supertype = 'OTHER'
 # List of high-level entity types
 type_dict = {
         'http://www.wikidata.org/entity/Q215627' : 'person',
+        'http://www.wikidata.org/entity/Q163875' : 'cardinal',
         'http://www.wikidata.org/entity/Q838948' : 'work of art', # use the broader type "creative work" instead
         #'http://www.wikidata.org/entity/Q17537576' : 'creative work', # use the broader type "intellectaual work" instead
         #'http://www.wikidata.org/entity/Q15621286' : 'intellectual work', # use the broader type "work" instead

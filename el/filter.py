@@ -212,7 +212,6 @@ class SpaCyTypeFilter:
 
                         # and add the candidate if one of its supertypes matches the spaCy type of the mention
                         for mention_type in mention['types']:
-                            import pudb; pu.db
                             if mention_type in supertypes:
                                 candidate_has_correct_type = True
                                 mention['filtered_candidates'].append(candidate)
