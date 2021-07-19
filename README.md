@@ -9,7 +9,7 @@ This is an entity linker using a type filter based on BERT to filter the set of 
 ```bash
 python -m venv ve
 source ./ve/bin/activate
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 2. Download spaCy <tt>small</tt> and <tt>transformer</tt> models
