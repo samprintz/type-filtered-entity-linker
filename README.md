@@ -45,16 +45,16 @@ wget https://dl.fbaipublicfiles.com/torchbiggraph/wikidata_translation_v1_vector
 gunzip wikidata_translation_v1_vectors.json.gz
 ```
 
-7. Optional: Download the pre-trained ED model "BERT+PBG" and copy it to <tt>./data/models/bert_pbg</tt>
+7. Train the ED model "BERT+PBG" and copy it to <tt>./data/models/bert_pbg</tt>
 
-TODO
+See https://github.com/samprintz/ed-with-kg-structure#entity-disambiguation-with-knowledge-graph-structure
 
-8. Optional: Download the pre-trained type classifier TypeRec-BERT and copy it to <tt>./data/models/typerec</tt>
+8. Train the type classifier TypeRec-BERT and copy it to <tt>./data/models/typerec</tt>
 
-TODO
+See https://github.com/samprintz/type-filtered-entity-linker#type-classifier-typerec-bert
 
 
-## Run Type-Fltered Entity Linker
+## Run Type-Filtered Entity Linker
 
 To execute a test run of the type-filtered entity linker
 
